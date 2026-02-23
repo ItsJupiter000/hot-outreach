@@ -5,10 +5,38 @@ import { api } from "@shared/routes";
 import { z } from "zod";
 import { sendEmail } from "./mailService";
 
+import path from "path";
+import multer from "multer";
+import fs from "fs";
+
+const upload = multer({
+  storage: multer.diskStorage({
+    destination: "uploads/",
+    filename: (req, file, cb) => {
+      cb(null, `${Date.now()}-${file.originalname}`);
+    },
+  }),
+});
+
 export async function registerRoutes(
   httpServer: Server,
   app: Express
 ): Promise<Server> {
+  // Ensure uploads directory exists
+  if (!fs.existsSync("uploads")) {
+    fs.mkdirSync("uploads");
+  }
+
+  // Upload Resume
+  app.post(api.upload.resume.path, upload.single("resume"), (req, res) => {
+    if (!req.file) {
+      return res.status(400).json({ message: "No file uploaded" });
+    }
+    res.json({ 
+      url: req.file.path, 
+      name: req.file.originalname 
+    });
+  });
 
   // Templates
   app.get(api.templates.list.path, async (req, res) => {
@@ -108,7 +136,11 @@ export async function registerRoutes(
 
       // Attempt to send email
       try {
-         await sendEmail(input.email, finalSubject, finalHtml);
+         const attachments = input.resumeUrl ? [{
+           filename: input.resumeName || "resume.pdf",
+           path: path.resolve(input.resumeUrl)
+         }] : [];
+         await sendEmail(input.email, finalSubject, finalHtml, attachments);
       } catch (emailErr) {
          console.error("Email send failed:", emailErr);
          return res.status(500).json({ message: "Failed to send email. Check SMTP credentials." });

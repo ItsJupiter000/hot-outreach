@@ -40,6 +40,8 @@ export const SendEmailRequestSchema = z.object({
   email: z.string().email("Invalid email address"),
   templateId: z.string().uuid(),
   customMessage: z.string().optional(),
+  resumeUrl: z.string().optional(),
+  resumeName: z.string().optional(),
 });
 
 export type SendEmailRequest = z.infer<typeof SendEmailRequestSchema>;

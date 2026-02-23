@@ -12,7 +12,7 @@ const getTransporter = () => {
   });
 };
 
-export async function sendEmail(to: string, subject: string, html: string) {
+export async function sendEmail(to: string, subject: string, html: string, attachments?: { filename: string, path: string }[]) {
   const transporter = getTransporter();
   const fromName = process.env.MY_NAME || "Job Bot";
   const fromEmail = process.env.MY_EMAIL || process.env.SMTP_USER || "bot@local.dev";
@@ -22,6 +22,7 @@ export async function sendEmail(to: string, subject: string, html: string) {
     to,
     subject,
     html,
+    attachments,
   });
 
   return info;

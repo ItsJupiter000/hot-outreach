@@ -65,6 +65,16 @@ export const api = {
       },
     },
   },
+  upload: {
+    resume: {
+      method: "POST" as const,
+      path: "/api/upload-resume" as const,
+      responses: {
+        200: z.object({ url: z.string(), name: z.string() }),
+        400: errorSchemas.validation,
+      },
+    },
+  },
 };
 
 export function buildUrl(path: string, params?: Record<string, string | number>): string {
