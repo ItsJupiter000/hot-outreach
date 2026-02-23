@@ -1,0 +1,82 @@
+import { z } from "zod";
+import { TemplateSchema, ApplicationSchema, SendEmailRequestSchema } from "./schema";
+
+export const errorSchemas = {
+  validation: z.object({ message: z.string(), field: z.string().optional() }),
+  notFound: z.object({ message: z.string() }),
+  internal: z.object({ message: z.string() }),
+};
+
+export const api = {
+  templates: {
+    list: {
+      method: "GET" as const,
+      path: "/api/templates" as const,
+      responses: { 200: z.array(TemplateSchema) },
+    },
+    create: {
+      method: "POST" as const,
+      path: "/api/templates" as const,
+      input: TemplateSchema.omit({ id: true }),
+      responses: {
+        201: TemplateSchema,
+        400: errorSchemas.validation,
+      },
+    },
+    delete: {
+      method: "DELETE" as const,
+      path: "/api/templates/:id" as const,
+      responses: {
+        204: z.void(),
+        404: errorSchemas.notFound,
+      },
+    },
+  },
+  applications: {
+    list: {
+      method: "GET" as const,
+      path: "/api/applications" as const,
+      input: z.object({
+        search: z.string().optional(),
+        status: z.string().optional(),
+      }).optional(),
+      responses: { 200: z.array(ApplicationSchema) },
+    },
+    update: {
+      method: "PATCH" as const,
+      path: "/api/applications/:id" as const,
+      input: z.object({ status: z.string().optional(), notes: z.string().optional() }),
+      responses: {
+        200: ApplicationSchema,
+        400: errorSchemas.validation,
+        404: errorSchemas.notFound,
+      },
+    },
+  },
+  email: {
+    send: {
+      method: "POST" as const,
+      path: "/api/send-email" as const,
+      input: SendEmailRequestSchema,
+      responses: {
+        201: ApplicationSchema,
+        400: errorSchemas.validation,
+        429: z.object({ message: z.string() }), // Rate limit / duplicate send
+      },
+    },
+  },
+};
+
+export function buildUrl(path: string, params?: Record<string, string | number>): string {
+  let url = path;
+  if (params) {
+    Object.entries(params).forEach(([key, value]) => {
+      if (url.includes(`:${key}`)) {
+        url = url.replace(`:${key}`, String(value));
+      }
+    });
+  }
+  return url;
+}
+
+export type NoteInput = never; // unused, placeholder to avoid template errors if needed

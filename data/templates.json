@@ -1,0 +1,14 @@
+[
+  {
+    "id": "d8b35074-4d5a-4aee-b220-f1636c8d813f",
+    "name": "Cold Outreach",
+    "subject": "Exploring Engineering Opportunities at {{companyName}}",
+    "content": "<p>Hi Team,</p><p>I'm {{myName}}, a {{myRole}} with a passion for building great products. I've been following {{companyName}} and love what you're doing.</p><p>{{customMessage}}</p><p>Best,<br/>{{myName}}</p>"
+  },
+  {
+    "id": "05aa5899-72e0-492d-a542-227ac5dbf6a5",
+    "name": "Job Application",
+    "subject": "Application for {{myRole}} position at {{companyName}}",
+    "content": "<p>Hello,</p><p>I recently applied for the {{myRole}} role at {{companyName}}. I wanted to follow up and express my strong interest.</p><p>{{customMessage}}</p><p>Regards,<br/>{{myName}}</p>"
+  }
+]
