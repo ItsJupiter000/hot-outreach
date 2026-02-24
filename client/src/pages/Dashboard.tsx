@@ -13,33 +13,7 @@ export default function Dashboard() {
     email: "",
     templateId: "",
     customMessage: "",
-    resumeUrl: "",
-    resumeName: "",
   });
-
-  const [isUploading, setIsUploading] = useState(false);
-
-  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-
-    setIsUploading(true);
-    const formData = new FormData();
-    formData.append("resume", file);
-
-    try {
-      const res = await fetch("/api/upload-resume", {
-        method: "POST",
-        body: formData,
-      });
-      const data = await res.json();
-      setForm(prev => ({ ...prev, resumeUrl: data.url, resumeName: data.name }));
-    } catch (err) {
-      console.error("Upload failed", err);
-    } finally {
-      setIsUploading(false);
-    }
-  };
 
   const selectedTemplate = useMemo(() => 
     templates.find(t => t.id === form.templateId), 
@@ -132,34 +106,6 @@ export default function Dashboard() {
 
             <div className="space-y-2">
               <label className="text-sm font-medium flex items-center gap-2 text-slate-700">
-                <FileUp className="w-4 h-4 text-primary" /> Resume (Optional)
-              </label>
-              <div className="relative">
-                <input
-                  type="file"
-                  onChange={handleFileUpload}
-                  className="hidden"
-                  id="resume-upload"
-                  accept=".pdf,.doc,.docx"
-                />
-                <label
-                  htmlFor="resume-upload"
-                  className="flex items-center justify-center w-full px-4 py-2.5 rounded-xl bg-slate-50 border border-slate-200 border-dashed text-slate-500 hover:border-primary hover:text-primary transition-all cursor-pointer"
-                >
-                  {isUploading ? (
-                    <Loader2 className="w-4 h-4 animate-spin mr-2" />
-                  ) : form.resumeName ? (
-                    <CheckCircle2 className="w-4 h-4 mr-2 text-emerald-500" />
-                  ) : (
-                    <FileUp className="w-4 h-4 mr-2" />
-                  )}
-                  {form.resumeName || (isUploading ? "Uploading..." : "Click to upload resume")}
-                </label>
-              </div>
-            </div>
-
-            <div className="space-y-2">
-              <label className="text-sm font-medium flex items-center gap-2 text-slate-700">
                 <PenTool className="w-4 h-4 text-primary" /> Custom Message (Optional)
               </label>
               <textarea
@@ -172,6 +118,9 @@ export default function Dashboard() {
             </div>
 
             <div className="pt-2">
+              <p className="text-xs text-slate-500 mb-4 bg-slate-50 p-3 rounded-lg border border-slate-100 italic">
+                Note: Your default Resume (set in Documents) will be automatically attached to this email.
+              </p>
               <button
                 type="submit"
                 disabled={isPending || !form.templateId}

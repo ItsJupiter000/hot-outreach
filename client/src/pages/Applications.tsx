@@ -4,9 +4,12 @@ import { useApplications, useUpdateApplication } from "@/hooks/use-applications"
 import { Application, ApplicationStatus } from "@shared/schema";
 import { Modal } from "@/components/ui/Modal";
 import { format } from "date-fns";
-import { Search, Filter, Loader2, Edit3, Save } from "lucide-react";
+import { Search, Filter, Loader2, Edit3, Save, Trash2 } from "lucide-react";
 import { clsx, type ClassValue } from "clsx";
 import { twMerge } from "tailwind-merge";
+import { useMutation } from "@tanstack/react-query";
+import { queryClient, apiRequest } from "@/lib/queryClient";
+import { useToast } from "@/hooks/use-toast";
 
 function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
@@ -24,9 +27,20 @@ const statusColors: Record<ApplicationStatus, string> = {
 export default function Applications() {
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("");
+  const { toast } = useToast();
   
   const { data: applications = [], isLoading } = useApplications({ search, status: statusFilter });
   const { mutate: updateApp } = useUpdateApplication();
+
+  const deleteMutation = useMutation({
+    mutationFn: async (id: string) => {
+      await apiRequest("DELETE", `/api/applications/${id}`);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/applications"] });
+      toast({ title: "Deleted", description: "Application removed from history" });
+    },
+  });
 
   const [notesModal, setNotesModal] = useState<{ isOpen: boolean; app: Application | null }>({ isOpen: false, app: null });
   const [editingNotes, setEditingNotes] = useState("");
@@ -44,6 +58,12 @@ export default function Applications() {
     if (notesModal.app) {
       updateApp({ id: notesModal.app.id, updates: { notes: editingNotes } });
       setNotesModal({ isOpen: false, app: null });
+    }
+  };
+
+  const handleDelete = (id: string) => {
+    if (confirm("Are you sure you want to delete this application record?")) {
+      deleteMutation.mutate(id);
     }
   };
 
@@ -135,13 +155,20 @@ export default function Applications() {
                         </div>
                       </div>
                     </td>
-                    <td className="px-6 py-4 text-right">
+                    <td className="px-6 py-4 text-right flex items-center justify-end gap-2">
                       <button 
                         onClick={() => openNotes(app)}
                         className="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium text-slate-600 hover:text-primary hover:bg-primary/5 rounded-lg transition-colors"
                       >
                         <Edit3 className="w-4 h-4" />
                         Notes
+                      </button>
+                      <button 
+                        onClick={() => handleDelete(app.id)}
+                        className="p-1.5 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors"
+                        title="Delete record"
+                      >
+                        <Trash2 className="w-4 h-4" />
                       </button>
                     </td>
                   </tr>

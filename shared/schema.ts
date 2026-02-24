@@ -35,13 +35,27 @@ export const ApplicationSchema = z.object({
 export type Application = z.infer<typeof ApplicationSchema>;
 export type UpdateApplication = Partial<Pick<Application, "status" | "notes">>;
 
+export const DocumentTypeEnum = z.enum(["Resume", "Cover Letter", "Portfolio", "Other"]);
+export type DocumentType = z.infer<typeof DocumentTypeEnum>;
+
+export const DocumentSchema = z.object({
+  id: z.string().uuid(),
+  name: z.string().min(1, "Name is required"),
+  type: DocumentTypeEnum,
+  filePath: z.string(),
+  fileName: z.string(),
+  isDefault: z.boolean().default(false),
+  createdAt: z.string(),
+});
+
+export type Document = z.infer<typeof DocumentSchema>;
+export type InsertDocument = Omit<Document, "id" | "createdAt">;
+
 export const SendEmailRequestSchema = z.object({
   companyName: z.string().min(1, "Company name is required"),
   email: z.string().email("Invalid email address"),
   templateId: z.string().uuid(),
   customMessage: z.string().optional(),
-  resumeUrl: z.string().optional(),
-  resumeName: z.string().optional(),
 });
 
 export type SendEmailRequest = z.infer<typeof SendEmailRequestSchema>;

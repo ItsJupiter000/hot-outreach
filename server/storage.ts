@@ -1,4 +1,4 @@
-import { Application, InsertTemplate, Template, UpdateApplication } from "@shared/schema";
+import { Application, InsertTemplate, Template, UpdateApplication, Document, InsertDocument } from "@shared/schema";
 import { JsonDB } from "./jsonDB";
 import { randomUUID } from "crypto";
 
@@ -14,12 +14,22 @@ export interface IStorage {
   getApplication(id: string): Promise<Application | undefined>;
   createApplication(app: Omit<Application, "id" | "history">): Promise<Application>;
   updateApplication(id: string, updates: UpdateApplication): Promise<Application>;
+  deleteApplication(id: string): Promise<void>;
   checkDuplicateSend(companyName: string, email: string): Promise<boolean>;
+
+  // Documents
+  getDocuments(): Promise<Document[]>;
+  getDocument(id: string): Promise<Document | undefined>;
+  getDefaultDocument(type: string): Promise<Document | undefined>;
+  createDocument(doc: InsertDocument): Promise<Document>;
+  deleteDocument(id: string): Promise<void>;
+  setDefaultDocument(id: string): Promise<Document>;
 }
 
 export class JsonStorage implements IStorage {
   private templatesDb: JsonDB<Template[]>;
   private applicationsDb: JsonDB<Application[]>;
+  private documentsDb: JsonDB<Document[]>;
 
   constructor() {
     const defaultTemplates: Template[] = [
@@ -38,6 +48,7 @@ export class JsonStorage implements IStorage {
     ];
     this.templatesDb = new JsonDB("templates.json", defaultTemplates);
     this.applicationsDb = new JsonDB("applications.json", []);
+    this.documentsDb = new JsonDB("documents.json", []);
   }
 
   async getTemplates(): Promise<Template[]> {
@@ -105,6 +116,12 @@ export class JsonStorage implements IStorage {
     return app;
   }
 
+  async deleteApplication(id: string): Promise<void> {
+    let apps = await this.getApplications();
+    apps = apps.filter((a) => a.id !== id);
+    await this.applicationsDb.write(apps);
+  }
+
   async checkDuplicateSend(companyName: string, email: string): Promise<boolean> {
     const apps = await this.getApplications();
     const now = new Date();
@@ -116,6 +133,64 @@ export class JsonStorage implements IStorage {
         a.email.toLowerCase() === email.toLowerCase() &&
         new Date(a.sentAt) > oneDayAgo
     );
+  }
+
+  // Documents
+  async getDocuments(): Promise<Document[]> {
+    return await this.documentsDb.read();
+  }
+
+  async getDocument(id: string): Promise<Document | undefined> {
+    const docs = await this.getDocuments();
+    return docs.find((d) => d.id === id);
+  }
+
+  async getDefaultDocument(type: string): Promise<Document | undefined> {
+    const docs = await this.getDocuments();
+    return docs.find((d) => d.type === type && d.isDefault);
+  }
+
+  async createDocument(doc: InsertDocument): Promise<Document> {
+    const docs = await this.getDocuments();
+    
+    // If this is the first document of its type, make it default
+    const sameTypeExists = docs.some(d => d.type === doc.type);
+    const newDoc: Document = { 
+      ...doc, 
+      id: randomUUID(), 
+      createdAt: new Date().toISOString(),
+      isDefault: doc.isDefault || !sameTypeExists 
+    };
+
+    if (newDoc.isDefault) {
+      docs.forEach(d => {
+        if (d.type === newDoc.type) d.isDefault = false;
+      });
+    }
+
+    docs.push(newDoc);
+    await this.documentsDb.write(docs);
+    return newDoc;
+  }
+
+  async deleteDocument(id: string): Promise<void> {
+    let docs = await this.getDocuments();
+    docs = docs.filter((d) => d.id !== id);
+    await this.documentsDb.write(docs);
+  }
+
+  async setDefaultDocument(id: string): Promise<Document> {
+    const docs = await this.getDocuments();
+    const doc = docs.find(d => d.id === id);
+    if (!doc) throw new Error("Document not found");
+
+    docs.forEach(d => {
+      if (d.type === doc.type) d.isDefault = false;
+    });
+    doc.isDefault = true;
+
+    await this.documentsDb.write(docs);
+    return doc;
   }
 }
 

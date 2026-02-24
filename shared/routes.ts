@@ -52,6 +52,45 @@ export const api = {
         404: errorSchemas.notFound,
       },
     },
+    delete: {
+      method: "DELETE" as const,
+      path: "/api/applications/:id" as const,
+      responses: {
+        204: z.void(),
+        404: errorSchemas.notFound,
+      },
+    },
+  },
+  documents: {
+    list: {
+      method: "GET" as const,
+      path: "/api/documents" as const,
+      responses: { 200: z.array(z.any()) }, // Using any for Document to avoid circular issues if any
+    },
+    create: {
+      method: "POST" as const,
+      path: "/api/documents" as const,
+      responses: {
+        201: z.any(),
+        400: errorSchemas.validation,
+      },
+    },
+    delete: {
+      method: "DELETE" as const,
+      path: "/api/documents/:id" as const,
+      responses: {
+        204: z.void(),
+        404: errorSchemas.notFound,
+      },
+    },
+    setDefault: {
+      method: "POST" as const,
+      path: "/api/documents/:id/default" as const,
+      responses: {
+        200: z.any(),
+        404: errorSchemas.notFound,
+      },
+    },
   },
   email: {
     send: {

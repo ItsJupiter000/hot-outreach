@@ -27,7 +27,48 @@ export async function registerRoutes(
     fs.mkdirSync("uploads");
   }
 
-  // Upload Resume
+  // Documents
+  app.get(api.documents.list.path, async (req, res) => {
+    const docs = await storage.getDocuments();
+    res.json(docs);
+  });
+
+  app.post(api.documents.create.path, upload.single("file"), async (req, res) => {
+    try {
+      if (!req.file) {
+        return res.status(400).json({ message: "No file uploaded" });
+      }
+      const type = req.body.type || "Resume";
+      const name = req.body.name || req.file.originalname;
+      
+      const doc = await storage.createDocument({
+        name,
+        type,
+        filePath: req.file.path,
+        fileName: req.file.originalname,
+        isDefault: req.body.isDefault === 'true'
+      });
+      res.status(201).json(doc);
+    } catch (err) {
+      res.status(500).json({ message: "Internal Error" });
+    }
+  });
+
+  app.delete(api.documents.delete.path, async (req, res) => {
+    await storage.deleteDocument(req.params.id);
+    res.status(204).end();
+  });
+
+  app.post(api.documents.setDefault.path, async (req, res) => {
+    try {
+      const doc = await storage.setDefaultDocument(req.params.id);
+      res.json(doc);
+    } catch (err: any) {
+      res.status(404).json({ message: err.message });
+    }
+  });
+
+  // Upload Resume (legacy, kept for compat or simple uploads)
   app.post(api.upload.resume.path, upload.single("resume"), (req, res) => {
     if (!req.file) {
       return res.status(400).json({ message: "No file uploaded" });
@@ -104,6 +145,11 @@ export async function registerRoutes(
     }
   });
 
+  app.delete(api.applications.delete.path, async (req, res) => {
+    await storage.deleteApplication(req.params.id);
+    res.status(204).end();
+  });
+
   // Send Email
   app.post(api.email.send.path, async (req, res) => {
     try {
@@ -136,9 +182,10 @@ export async function registerRoutes(
 
       // Attempt to send email
       try {
-         const attachments = input.resumeUrl ? [{
-           filename: input.resumeName || "resume.pdf",
-           path: path.resolve(input.resumeUrl)
+         const defaultResume = await storage.getDefaultDocument("Resume");
+         const attachments = defaultResume ? [{
+           filename: defaultResume.fileName,
+           path: path.resolve(defaultResume.filePath)
          }] : [];
          await sendEmail(input.email, finalSubject, finalHtml, attachments);
       } catch (emailErr) {

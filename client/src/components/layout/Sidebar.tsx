@@ -1,5 +1,5 @@
 import { Link, useLocation } from "wouter";
-import { Send, FileText, LayoutDashboard, Settings, Mail } from "lucide-react";
+import { Send, FileText, LayoutDashboard, Settings, Mail, Files } from "lucide-react";
 import { clsx, type ClassValue } from "clsx";
 import { twMerge } from "tailwind-merge";
 
@@ -11,6 +11,7 @@ const navItems = [
   { href: "/", label: "New Outreach", icon: Send },
   { href: "/applications", label: "Applications", icon: LayoutDashboard },
   { href: "/templates", label: "Templates", icon: FileText },
+  { href: "/documents", label: "Documents", icon: Files },
 ];
 
 export function Sidebar() {
