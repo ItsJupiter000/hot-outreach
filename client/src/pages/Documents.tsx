@@ -72,26 +72,26 @@ export default function Documents() {
 
   return (
     <Layout>
-      <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 mb-8">
+      <div className="flex flex-col lg:flex-row lg:items-end justify-between gap-4 mb-8">
         <div>
           <h1 className="text-3xl font-display font-bold text-foreground">Documents Management</h1>
           <p className="text-muted-foreground mt-2">Upload and manage your resumes, cover letters, and portfolios.</p>
         </div>
         
-        <div className="flex gap-3">
+        <div className="grid grid-cols-2 gap-3 w-full lg:w-auto">
           <select 
             value={docType}
             onChange={e => setDocType(e.target.value as DocumentType)}
-            className="px-4 py-2 bg-white border border-slate-200 rounded-xl text-sm focus:outline-none focus:border-primary transition-all"
+            className="px-4 py-2.5 bg-white border border-slate-200 rounded-xl text-sm focus:outline-none focus:border-primary transition-all w-full"
           >
             <option value="Resume">Resume</option>
             <option value="Cover Letter">Cover Letter</option>
             <option value="Portfolio">Portfolio</option>
             <option value="Other">Other</option>
           </select>
-          <label className="flex items-center gap-2 px-5 py-2.5 bg-primary text-white rounded-xl font-semibold shadow-lg shadow-primary/25 hover:-translate-y-0.5 transition-all cursor-pointer">
+          <label className="flex items-center justify-center gap-2 px-4 py-2.5 bg-primary text-white rounded-xl font-semibold shadow-lg shadow-primary/25 hover:-translate-y-0.5 transition-all cursor-pointer whitespace-nowrap">
             {isUploading ? <Loader2 className="w-4 h-4 animate-spin" /> : <FileUp className="w-4 h-4" />}
-            Upload New
+            <span>Upload</span>
             <input type="file" className="hidden" onChange={handleFileUpload} disabled={isUploading} />
           </label>
         </div>

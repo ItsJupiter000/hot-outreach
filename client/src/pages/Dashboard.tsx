@@ -44,15 +44,17 @@ export default function Dashboard() {
 
   return (
     <Layout>
-      <div className="mb-8">
-        <h1 className="text-3xl font-display font-bold text-foreground">New Outreach</h1>
-        <p className="text-muted-foreground mt-2">Compose and send personalized job application emails.</p>
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
+        <div>
+          <h1 className="text-3xl font-display font-bold text-foreground">New Outreach</h1>
+          <p className="text-muted-foreground mt-2">Compose and send personalized job application emails.</p>
+        </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 pb-10">
         {/* Form Section */}
         <div className="lg:col-span-5 space-y-6">
-          <form onSubmit={handleSubmit} className="bg-card rounded-2xl p-6 shadow-card border border-border/50 space-y-5">
+          <form onSubmit={handleSubmit} className="bg-card rounded-2xl p-5 md:p-6 shadow-card border border-border/50 space-y-5">
             
             <div className="space-y-2">
               <label className="text-sm font-medium flex items-center gap-2 text-slate-700">

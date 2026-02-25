@@ -104,7 +104,64 @@ export default function Applications() {
       </div>
 
       <div className="bg-card rounded-2xl shadow-card border border-border/50 overflow-hidden">
-        <div className="overflow-x-auto">
+        {/* Mobile-friendly list view (hidden on desktop) */}
+        <div className="md:hidden divide-y divide-border">
+          {isLoading ? (
+            <div className="p-8 text-center text-slate-400">
+              <Loader2 className="w-6 h-6 animate-spin mx-auto" />
+            </div>
+          ) : applications.length === 0 ? (
+            <div className="p-8 text-center text-slate-400">
+              No applications found matching your criteria.
+            </div>
+          ) : (
+            applications.map((app) => (
+              <div key={app.id} className="p-4 space-y-3">
+                <div className="flex justify-between items-start">
+                  <div>
+                    <h3 className="font-bold text-slate-900">{app.companyName}</h3>
+                    <p className="text-sm text-slate-500">{app.email}</p>
+                  </div>
+                  <button 
+                    onClick={() => handleDelete(app.id)}
+                    className="p-2 text-slate-400 hover:text-red-500"
+                  >
+                    <Trash2 className="w-4 h-4" />
+                  </button>
+                </div>
+                <div className="flex justify-between items-center pt-1">
+                  <span className="text-xs text-slate-400">{format(new Date(app.sentAt), "MMM d, yyyy")}</span>
+                  <div className="relative inline-block">
+                    <select
+                      value={app.status}
+                      onChange={(e) => handleStatusChange(app.id, e.target.value as ApplicationStatus)}
+                      className={cn(
+                        "appearance-none pl-3 pr-7 py-1 rounded-full text-[10px] font-bold border cursor-pointer focus:outline-none transition-all",
+                        statusColors[app.status as ApplicationStatus] || statusColors["Applied"]
+                      )}
+                    >
+                      {Object.keys(statusColors).map(s => (
+                        <option key={s} value={s}>{s}</option>
+                      ))}
+                    </select>
+                    <div className="absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none opacity-50">
+                      <svg width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><path d="m6 9 6 6 6-6"/></svg>
+                    </div>
+                  </div>
+                </div>
+                <button 
+                  onClick={() => openNotes(app)}
+                  className="w-full text-center py-2 text-sm font-medium text-slate-600 bg-slate-50 rounded-lg border border-slate-100"
+                >
+                  View/Edit Notes
+                </button>
+              </div>
+            ))
+          )}
+        </div>
+
+        {/* Desktop-friendly table view (hidden on mobile) */}
+        <div className="hidden md:block overflow-x-auto">
           <table className="w-full text-left border-collapse">
             <thead>
               <tr className="bg-slate-50/50 border-b border-border text-sm font-semibold text-slate-500">

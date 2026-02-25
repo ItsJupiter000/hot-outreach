@@ -19,6 +19,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
              <nav className="flex-1 space-y-2 text-slate-300">
                <Link href="/" onClick={() => setMobileMenuOpen(false)} className={`block p-3 rounded-lg ${location === '/' ? 'bg-primary/20 text-primary' : ''}`}>New Outreach</Link>
                <Link href="/applications" onClick={() => setMobileMenuOpen(false)} className={`block p-3 rounded-lg ${location === '/applications' ? 'bg-primary/20 text-primary' : ''}`}>Applications</Link>
+               <Link href="/documents" onClick={() => setMobileMenuOpen(false)} className={`block p-3 rounded-lg ${location === '/documents' ? 'bg-primary/20 text-primary' : ''}`}>Documents</Link>
                <Link href="/templates" onClick={() => setMobileMenuOpen(false)} className={`block p-3 rounded-lg ${location === '/templates' ? 'bg-primary/20 text-primary' : ''}`}>Templates</Link>
              </nav>
           </div>
