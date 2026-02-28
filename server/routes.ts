@@ -11,7 +11,7 @@ import fs from "fs";
 
 const upload = multer({
   storage: multer.diskStorage({
-    destination: "uploads/",
+    destination: "persistent_data/uploads/",
     filename: (req, file, cb) => {
       cb(null, `${Date.now()}-${file.originalname}`);
     },
@@ -23,8 +23,9 @@ export async function registerRoutes(
   app: Express
 ): Promise<Server> {
   // Ensure uploads directory exists
-  if (!fs.existsSync("uploads")) {
-    fs.mkdirSync("uploads");
+  const uploadsDir = path.join("persistent_data", "uploads");
+  if (!fs.existsSync(uploadsDir)) {
+    fs.mkdirSync(uploadsDir, { recursive: true });
   }
 
   // Documents
