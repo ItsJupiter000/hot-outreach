@@ -1,7 +1,8 @@
 import { Link, useLocation } from "wouter";
-import { Send, FileText, LayoutDashboard, Settings, Mail, Files } from "lucide-react";
+import { Send, FileText, LayoutDashboard, Settings, Mail, Files, Moon, Sun } from "lucide-react";
 import { clsx, type ClassValue } from "clsx";
 import { twMerge } from "tailwind-merge";
+import { useTheme } from "@/components/theme-provider";
 
 function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
@@ -16,6 +17,7 @@ const navItems = [
 
 export function Sidebar() {
   const [location] = useLocation();
+  const { theme, setTheme } = useTheme();
 
   return (
     <div className="w-64 h-screen bg-slate-950 text-slate-300 flex flex-col hidden md:flex border-r border-slate-900 shadow-xl z-10 relative">
@@ -55,7 +57,14 @@ export function Sidebar() {
         })}
       </nav>
 
-      <div className="p-4 border-t border-slate-900/50">
+      <div className="p-4 border-t border-slate-900/50 space-y-2">
+        <button
+          onClick={() => setTheme(theme === "light" ? "dark" : "light")}
+          className="flex items-center gap-3 w-full px-3 py-2.5 rounded-xl text-sm font-medium text-slate-400 hover:text-slate-200 hover:bg-slate-900 transition-colors cursor-pointer"
+        >
+          {theme === "light" ? <Moon className="w-5 h-5" /> : <Sun className="w-5 h-5" />}
+          {theme === "light" ? "Dark Mode" : "Light Mode"}
+        </button>
         <div className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-slate-400 hover:text-slate-200 hover:bg-slate-900 transition-colors cursor-pointer">
           <Settings className="w-5 h-5" />
           Settings
