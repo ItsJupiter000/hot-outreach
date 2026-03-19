@@ -1,5 +1,5 @@
 import { Application, InsertTemplate, Template, UpdateApplication, Document, InsertDocument } from "@shared/schema";
-import { JsonDB } from "./jsonDB";
+import { supabase } from "./supabaseClient";
 import { randomUUID } from "crypto";
 
 export interface IStorage {
@@ -26,172 +26,234 @@ export interface IStorage {
   setDefaultDocument(id: string): Promise<Document>;
 }
 
-export class JsonStorage implements IStorage {
-  private templatesDb: JsonDB<Template[]>;
-  private applicationsDb: JsonDB<Application[]>;
-  private documentsDb: JsonDB<Document[]>;
+function mapRowToTemplate(row: any): Template {
+  return {
+    id: row.id,
+    name: row.name,
+    subject: row.subject,
+    content: row.content,
+  };
+}
 
-  constructor() {
-    const defaultTemplates: Template[] = [
-      {
-        id: randomUUID(),
-        name: "Cold Outreach",
-        subject: "Exploring Engineering Opportunities at {{companyName}}",
-        content: "<p>Hi Team,</p><p>I'm {{myName}}, a {{myRole}} with a passion for building great products. I've been following {{companyName}} and love what you're doing.</p><p>{{customMessage}}</p><p>Best,<br/>{{myName}}</p>"
-      },
-      {
-        id: randomUUID(),
-        name: "Job Application",
-        subject: "Application for {{myRole}} position at {{companyName}}",
-        content: "<p>Hello,</p><p>I recently applied for the {{myRole}} role at {{companyName}}. I wanted to follow up and express my strong interest.</p><p>{{customMessage}}</p><p>Regards,<br/>{{myName}}</p>"
-      }
-    ];
-    this.templatesDb = new JsonDB("templates.json", defaultTemplates);
-    this.applicationsDb = new JsonDB("applications.json", []);
-    this.documentsDb = new JsonDB("documents.json", []);
-  }
+function mapRowToApplication(row: any): Application {
+  return {
+    id: row.id,
+    companyName: row.company_name,
+    email: row.email,
+    templateId: row.template_id,
+    status: row.status,
+    sentAt: typeof row.sent_at === "string" ? row.sent_at : new Date(row.sent_at).toISOString(),
+    updatedAt: typeof row.updated_at === "string" ? row.updated_at : new Date(row.updated_at).toISOString(),
+    notes: row.notes ?? undefined,
+    history: Array.isArray(row.history) ? row.history : [],
+  };
+}
+
+function mapRowToDocument(row: any): Document {
+  return {
+    id: row.id,
+    name: row.name,
+    type: row.type,
+    filePath: row.file_path,
+    fileName: row.file_name,
+    isDefault: row.is_default,
+    createdAt: typeof row.created_at === "string" ? row.created_at : new Date(row.created_at).toISOString(),
+  };
+}
+
+export class SupabaseStorage implements IStorage {
+  // ─── Templates ──────────────────────────────────────────────────────────────
 
   async getTemplates(): Promise<Template[]> {
-    return await this.templatesDb.read();
+    const { data, error } = await supabase.from("templates").select("*").order("name");
+    if (error) throw new Error(error.message);
+    return (data ?? []).map(mapRowToTemplate);
   }
 
   async getTemplate(id: string): Promise<Template | undefined> {
-    const templates = await this.getTemplates();
-    return templates.find((t) => t.id === id);
+    const { data, error } = await supabase.from("templates").select("*").eq("id", id).maybeSingle();
+    if (error) throw new Error(error.message);
+    return data ? mapRowToTemplate(data) : undefined;
   }
 
   async createTemplate(insertTemplate: InsertTemplate): Promise<Template> {
-    const templates = await this.getTemplates();
-    const newTemplate: Template = { ...insertTemplate, id: randomUUID() };
-    templates.push(newTemplate);
-    await this.templatesDb.write(templates);
-    return newTemplate;
+    const { data, error } = await supabase
+      .from("templates")
+      .insert({ id: randomUUID(), ...insertTemplate })
+      .select()
+      .single();
+    if (error) throw new Error(error.message);
+    return mapRowToTemplate(data);
   }
 
   async deleteTemplate(id: string): Promise<void> {
-    let templates = await this.getTemplates();
-    templates = templates.filter((t) => t.id !== id);
-    await this.templatesDb.write(templates);
+    const { error } = await supabase.from("templates").delete().eq("id", id);
+    if (error) throw new Error(error.message);
   }
 
+  // ─── Applications ────────────────────────────────────────────────────────────
+
   async getApplications(): Promise<Application[]> {
-    return await this.applicationsDb.read();
+    const { data, error } = await supabase.from("applications").select("*").order("sent_at", { ascending: false });
+    if (error) throw new Error(error.message);
+    return (data ?? []).map(mapRowToApplication);
   }
 
   async getApplication(id: string): Promise<Application | undefined> {
-    const apps = await this.getApplications();
-    return apps.find((a) => a.id === id);
+    const { data, error } = await supabase.from("applications").select("*").eq("id", id).maybeSingle();
+    if (error) throw new Error(error.message);
+    return data ? mapRowToApplication(data) : undefined;
   }
 
   async createApplication(appData: Omit<Application, "id" | "history">): Promise<Application> {
-    const apps = await this.getApplications();
-    const newApp: Application = {
-      ...appData,
-      id: randomUUID(),
-      history: [{ status: appData.status, date: appData.updatedAt }],
-    };
-    apps.push(newApp);
-    await this.applicationsDb.write(apps);
-    return newApp;
+    const id = randomUUID();
+    const history = [{ status: appData.status, date: appData.sentAt }];
+
+    const { data, error } = await supabase
+      .from("applications")
+      .insert({
+        id,
+        company_name: appData.companyName,
+        email: appData.email,
+        template_id: appData.templateId,
+        status: appData.status,
+        sent_at: appData.sentAt,
+        updated_at: appData.updatedAt,
+        notes: appData.notes ?? null,
+        history,
+      })
+      .select()
+      .single();
+    if (error) throw new Error(error.message);
+    return mapRowToApplication(data);
   }
 
   async updateApplication(id: string, updates: UpdateApplication): Promise<Application> {
-    const apps = await this.getApplications();
-    const index = apps.findIndex((a) => a.id === id);
-    if (index === -1) throw new Error("Application not found");
+    const existing = await this.getApplication(id);
+    if (!existing) throw new Error("Application not found");
 
-    const app = apps[index];
     const now = new Date().toISOString();
+    const newHistory = [...existing.history];
 
-    if (updates.status && updates.status !== app.status) {
-      app.status = updates.status;
-      app.history.push({ status: updates.status, date: now });
+    if (updates.status && updates.status !== existing.status) {
+      newHistory.push({ status: updates.status, date: now });
     }
-    if (updates.notes !== undefined) {
-      app.notes = updates.notes;
-    }
-    app.updatedAt = now;
 
-    await this.applicationsDb.write(apps);
-    return app;
+    const { data, error } = await supabase
+      .from("applications")
+      .update({
+        ...(updates.status ? { status: updates.status } : {}),
+        ...(updates.notes !== undefined ? { notes: updates.notes } : {}),
+        updated_at: now,
+        history: newHistory,
+      })
+      .eq("id", id)
+      .select()
+      .single();
+    if (error) throw new Error(error.message);
+    return mapRowToApplication(data);
   }
 
   async deleteApplication(id: string): Promise<void> {
-    let apps = await this.getApplications();
-    apps = apps.filter((a) => a.id !== id);
-    await this.applicationsDb.write(apps);
+    const { error } = await supabase.from("applications").delete().eq("id", id);
+    if (error) throw new Error(error.message);
   }
 
   async checkDuplicateSend(companyName: string, email: string): Promise<boolean> {
-    const apps = await this.getApplications();
-    const now = new Date();
-    const oneDayAgo = new Date(now.getTime() - 24 * 60 * 60 * 1000);
-
-    return apps.some(
-      (a) =>
-        a.companyName.toLowerCase() === companyName.toLowerCase() &&
-        a.email.toLowerCase() === email.toLowerCase() &&
-        new Date(a.sentAt) > oneDayAgo
-    );
+    const oneDayAgo = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
+    const { data, error } = await supabase
+      .from("applications")
+      .select("id")
+      .ilike("company_name", companyName)
+      .ilike("email", email)
+      .gte("sent_at", oneDayAgo);
+    if (error) throw new Error(error.message);
+    return (data ?? []).length > 0;
   }
 
-  // Documents
+  // ─── Documents ──────────────────────────────────────────────────────────────
+
   async getDocuments(): Promise<Document[]> {
-    return await this.documentsDb.read();
+    const { data, error } = await supabase.from("documents").select("*").order("created_at", { ascending: false });
+    if (error) throw new Error(error.message);
+    return (data ?? []).map(mapRowToDocument);
   }
 
   async getDocument(id: string): Promise<Document | undefined> {
-    const docs = await this.getDocuments();
-    return docs.find((d) => d.id === id);
+    const { data, error } = await supabase.from("documents").select("*").eq("id", id).maybeSingle();
+    if (error) throw new Error(error.message);
+    return data ? mapRowToDocument(data) : undefined;
   }
 
   async getDefaultDocument(type: string): Promise<Document | undefined> {
-    const docs = await this.getDocuments();
-    return docs.find((d) => d.type === type && d.isDefault);
+    const { data, error } = await supabase
+      .from("documents")
+      .select("*")
+      .eq("type", type)
+      .eq("is_default", true)
+      .maybeSingle();
+    if (error) throw new Error(error.message);
+    return data ? mapRowToDocument(data) : undefined;
   }
 
   async createDocument(doc: InsertDocument): Promise<Document> {
-    const docs = await this.getDocuments();
-    
-    // If this is the first document of its type, make it default
-    const sameTypeExists = docs.some(d => d.type === doc.type);
-    const newDoc: Document = { 
-      ...doc, 
-      id: randomUUID(), 
-      createdAt: new Date().toISOString(),
-      isDefault: doc.isDefault || !sameTypeExists 
-    };
-
-    if (newDoc.isDefault) {
-      docs.forEach(d => {
-        if (d.type === newDoc.type) d.isDefault = false;
-      });
+    // If this is marked as default (or first of its type), clear existing defaults
+    if (doc.isDefault) {
+      await supabase.from("documents").update({ is_default: false }).eq("type", doc.type);
+    } else {
+      // Check if any of same type already exist; if not, make this default
+      const { data: existing } = await supabase.from("documents").select("id").eq("type", doc.type);
+      if (!existing || existing.length === 0) {
+        doc = { ...doc, isDefault: true };
+      }
     }
 
-    docs.push(newDoc);
-    await this.documentsDb.write(docs);
-    return newDoc;
+    const id = randomUUID();
+    const { data, error } = await supabase
+      .from("documents")
+      .insert({
+        id,
+        name: doc.name,
+        type: doc.type,
+        file_path: doc.filePath,
+        file_name: doc.fileName,
+        is_default: doc.isDefault,
+        created_at: new Date().toISOString(),
+      })
+      .select()
+      .single();
+    if (error) throw new Error(error.message);
+    return mapRowToDocument(data);
   }
 
   async deleteDocument(id: string): Promise<void> {
-    let docs = await this.getDocuments();
-    docs = docs.filter((d) => d.id !== id);
-    await this.documentsDb.write(docs);
+    // Also delete the file from Supabase Storage
+    const doc = await this.getDocument(id);
+    if (doc?.filePath) {
+      // file_path stores the storage path e.g. "documents/filename.pdf"
+      const storagePath = doc.filePath.replace(/^documents\//, "");
+      await supabase.storage.from("documents").remove([storagePath]);
+    }
+    const { error } = await supabase.from("documents").delete().eq("id", id);
+    if (error) throw new Error(error.message);
   }
 
   async setDefaultDocument(id: string): Promise<Document> {
-    const docs = await this.getDocuments();
-    const doc = docs.find(d => d.id === id);
+    const doc = await this.getDocument(id);
     if (!doc) throw new Error("Document not found");
 
-    docs.forEach(d => {
-      if (d.type === doc.type) d.isDefault = false;
-    });
-    doc.isDefault = true;
+    // Clear existing defaults for same type
+    await supabase.from("documents").update({ is_default: false }).eq("type", doc.type);
 
-    await this.documentsDb.write(docs);
-    return doc;
+    const { data, error } = await supabase
+      .from("documents")
+      .update({ is_default: true })
+      .eq("id", id)
+      .select()
+      .single();
+    if (error) throw new Error(error.message);
+    return mapRowToDocument(data);
   }
 }
 
-export const storage = new JsonStorage();
+export const storage = new SupabaseStorage();

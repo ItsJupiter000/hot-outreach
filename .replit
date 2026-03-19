@@ -38,3 +38,11 @@ author = "agent"
 task = "shell.exec"
 args = "npm run dev"
 waitForPort = 5000
+
+[userenv]
+
+[userenv.shared]
+SUPABASE_URL = "https://zvtjkqwknkpfqyoexpsg.supabase.co"
+SUPABASE_KEY = "sb_publishable_MRklqGKHtOSYLsHlT_ANMA_z9N5g5Ht"
+VITE_SUPABASE_URL = "https://zvtjkqwknkpfqyoexpsg.supabase.co"
+VITE_SUPABASE_KEY = "sb_publishable_MRklqGKHtOSYLsHlT_ANMA_z9N5g5Ht"
