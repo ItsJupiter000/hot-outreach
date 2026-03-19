@@ -47,6 +47,34 @@ export function useCreateTemplate() {
   });
 }
 
+export function useUpdateTemplate() {
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
+
+  return useMutation({
+    mutationFn: async ({ id, data }: { id: string; data: InsertTemplate }) => {
+      const res = await fetch(`/api/templates/${id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(data),
+        credentials: "include",
+      });
+      if (!res.ok) {
+        const err = await res.json();
+        throw new Error(err.message || "Failed to update template");
+      }
+      return res.json() as Promise<Template>;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: [api.templates.list.path] });
+      toast({ title: "Success", description: "Template updated successfully." });
+    },
+    onError: (error: Error) => {
+      toast({ title: "Error", description: error.message, variant: "destructive" });
+    },
+  });
+}
+
 export function useDeleteTemplate() {
   const queryClient = useQueryClient();
   const { toast } = useToast();

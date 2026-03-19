@@ -7,6 +7,7 @@ export interface IStorage {
   getTemplates(): Promise<Template[]>;
   getTemplate(id: string): Promise<Template | undefined>;
   createTemplate(template: InsertTemplate): Promise<Template>;
+  updateTemplate(id: string, updates: InsertTemplate): Promise<Template>;
   deleteTemplate(id: string): Promise<void>;
   setDefaultTemplate(id: string): Promise<Template>;
 
@@ -85,6 +86,17 @@ export class SupabaseStorage implements IStorage {
     const { data, error } = await supabase
       .from("templates")
       .insert({ id: randomUUID(), ...insertTemplate, is_default: isFirst })
+      .select()
+      .single();
+    if (error) throw new Error(error.message);
+    return mapRowToTemplate(data);
+  }
+
+  async updateTemplate(id: string, updates: InsertTemplate): Promise<Template> {
+    const { data, error } = await supabase
+      .from("templates")
+      .update({ name: updates.name, subject: updates.subject, content: updates.content })
+      .eq("id", id)
       .select()
       .single();
     if (error) throw new Error(error.message);

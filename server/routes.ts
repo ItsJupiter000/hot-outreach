@@ -112,6 +112,19 @@ export async function registerRoutes(
     }
   });
 
+  app.patch("/api/templates/:id", async (req, res) => {
+    try {
+      const input = api.templates.create.input.parse(req.body);
+      const template = await storage.updateTemplate(req.params.id, input);
+      res.json(template);
+    } catch (err) {
+      if (err instanceof z.ZodError) {
+        return res.status(400).json({ message: err.errors[0].message });
+      }
+      res.status(500).json({ message: "Internal Error" });
+    }
+  });
+
   app.delete(api.templates.delete.path, async (req, res) => {
     await storage.deleteTemplate(req.params.id);
     res.status(204).end();

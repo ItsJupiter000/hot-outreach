@@ -1,16 +1,71 @@
 import { useState } from "react";
 import { Layout } from "@/components/layout/Layout";
-import { useTemplates, useCreateTemplate, useDeleteTemplate } from "@/hooks/use-templates";
+import { useTemplates, useCreateTemplate, useDeleteTemplate, useUpdateTemplate } from "@/hooks/use-templates";
 import { Modal } from "@/components/ui/Modal";
-import { Plus, Trash2, FileText, Loader2, Star } from "lucide-react";
+import { Template } from "@shared/schema";
+import { Plus, Trash2, FileText, Loader2, Star, Pencil } from "lucide-react";
 import { useMutation } from "@tanstack/react-query";
 import { queryClient, apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 
+type TemplateForm = { name: string; subject: string; content: string };
+const emptyForm: TemplateForm = { name: "", subject: "", content: "" };
+
+const inputClass = "w-full px-4 py-2.5 rounded-xl bg-background border border-border text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-primary focus:ring-4 focus:ring-primary/10 transition-all";
+
+function TemplateFormFields({
+  form,
+  setForm,
+}: {
+  form: TemplateForm;
+  setForm: (f: TemplateForm) => void;
+}) {
+  return (
+    <div className="space-y-4">
+      <div className="space-y-2">
+        <label className="text-sm font-medium text-foreground">Template Name</label>
+        <input
+          required
+          value={form.name}
+          onChange={e => setForm({ ...form, name: e.target.value })}
+          placeholder="e.g. Standard Cold Outreach"
+          className={inputClass}
+        />
+      </div>
+      <div className="space-y-2">
+        <label className="text-sm font-medium text-foreground">Email Subject</label>
+        <input
+          required
+          value={form.subject}
+          onChange={e => setForm({ ...form, subject: e.target.value })}
+          placeholder="e.g. Exploring opportunities at {{companyName}}"
+          className={inputClass}
+        />
+        <p className="text-xs text-muted-foreground">Supports: {"{{companyName}}"}</p>
+      </div>
+      <div className="space-y-2">
+        <label className="text-sm font-medium text-foreground">Email Body</label>
+        <textarea
+          required
+          value={form.content}
+          onChange={e => setForm({ ...form, content: e.target.value })}
+          placeholder="Hi Team, I'm reaching out about..."
+          rows={10}
+          className={`${inputClass} resize-none font-sans`}
+        />
+        <p className="text-xs text-muted-foreground">
+          Variables: {"{{companyName}}"}, {"{{myName}}"}, {"{{myRole}}"}, {"{{customMessage}}"}
+        </p>
+      </div>
+    </div>
+  );
+}
+
 export default function Templates() {
   const { data: templates = [], isLoading } = useTemplates();
   const { mutate: createTemplate, isPending: isCreating } = useCreateTemplate();
-  const { mutate: deleteTemplate, isPending: isDeleting } = useDeleteTemplate();
+  const { mutate: updateTemplate, isPending: isUpdating } = useUpdateTemplate();
+  const { mutate: deleteTemplate } = useDeleteTemplate();
   const { toast } = useToast();
 
   const setDefaultMutation = useMutation({
@@ -27,15 +82,31 @@ export default function Templates() {
   });
 
   const [createModal, setCreateModal] = useState(false);
-  const [form, setForm] = useState({ name: "", subject: "", content: "" });
+  const [createForm, setCreateForm] = useState<TemplateForm>(emptyForm);
+
+  const [editTarget, setEditTarget] = useState<Template | null>(null);
+  const [editForm, setEditForm] = useState<TemplateForm>(emptyForm);
+
+  const openEdit = (t: Template) => {
+    setEditTarget(t);
+    setEditForm({ name: t.name, subject: t.subject, content: t.content });
+  };
 
   const handleCreate = (e: React.FormEvent) => {
     e.preventDefault();
-    createTemplate(form, {
+    createTemplate(createForm, {
       onSuccess: () => {
         setCreateModal(false);
-        setForm({ name: "", subject: "", content: "" });
-      }
+        setCreateForm(emptyForm);
+      },
+    });
+  };
+
+  const handleEdit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editTarget) return;
+    updateTemplate({ id: editTarget.id, data: editForm }, {
+      onSuccess: () => setEditTarget(null),
     });
   };
 
@@ -44,8 +115,6 @@ export default function Templates() {
       deleteTemplate(id);
     }
   };
-
-  const inputClass = "w-full px-4 py-2.5 rounded-xl bg-background border border-border text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-primary focus:ring-4 focus:ring-primary/10 transition-all";
 
   return (
     <Layout>
@@ -80,14 +149,22 @@ export default function Templates() {
                 <div className="bg-primary/10 p-2.5 rounded-xl text-primary">
                   <FileText className="w-5 h-5" />
                 </div>
-                <button
-                  onClick={() => handleDelete(template.id)}
-                  disabled={isDeleting}
-                  className="p-2 text-muted-foreground hover:text-destructive hover:bg-destructive/10 rounded-lg opacity-0 group-hover:opacity-100 transition-all focus:opacity-100"
-                  title="Delete Template"
-                >
-                  <Trash2 className="w-4 h-4" />
-                </button>
+                <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-all focus-within:opacity-100">
+                  <button
+                    onClick={() => openEdit(template)}
+                    className="p-2 text-muted-foreground hover:text-primary hover:bg-primary/10 rounded-lg transition-all"
+                    title="Edit Template"
+                  >
+                    <Pencil className="w-4 h-4" />
+                  </button>
+                  <button
+                    onClick={() => handleDelete(template.id)}
+                    className="p-2 text-muted-foreground hover:text-destructive hover:bg-destructive/10 rounded-lg transition-all"
+                    title="Delete Template"
+                  >
+                    <Trash2 className="w-4 h-4" />
+                  </button>
+                </div>
               </div>
 
               <h3 className="text-lg font-bold text-foreground mb-1 line-clamp-1">{template.name}</h3>
@@ -128,50 +205,10 @@ export default function Templates() {
         </div>
       )}
 
-      <Modal
-        isOpen={createModal}
-        onClose={() => setCreateModal(false)}
-        title="Create New Template"
-      >
+      {/* Create Modal */}
+      <Modal isOpen={createModal} onClose={() => setCreateModal(false)} title="Create New Template">
         <form onSubmit={handleCreate} className="space-y-4">
-          <div className="space-y-2">
-            <label className="text-sm font-medium text-foreground">Template Name</label>
-            <input
-              required
-              value={form.name}
-              onChange={e => setForm(prev => ({ ...prev, name: e.target.value }))}
-              placeholder="e.g. Standard Cold Outreach"
-              className={inputClass}
-            />
-          </div>
-
-          <div className="space-y-2">
-            <label className="text-sm font-medium text-foreground">Email Subject</label>
-            <input
-              required
-              value={form.subject}
-              onChange={e => setForm(prev => ({ ...prev, subject: e.target.value }))}
-              placeholder="e.g. Exploring opportunities at {{companyName}}"
-              className={inputClass}
-            />
-            <p className="text-xs text-muted-foreground">Supports: {'{{companyName}}'}</p>
-          </div>
-
-          <div className="space-y-2">
-            <label className="text-sm font-medium text-foreground">Email Body</label>
-            <textarea
-              required
-              value={form.content}
-              onChange={e => setForm(prev => ({ ...prev, content: e.target.value }))}
-              placeholder="Hi Team, I'm reaching out..."
-              rows={8}
-              className={`${inputClass} resize-none font-sans`}
-            />
-            <p className="text-xs text-muted-foreground">
-              Variables: {'{{companyName}}'}, {'{{myName}}'}, {'{{myRole}}'}, {'{{customMessage}}'}
-            </p>
-          </div>
-
+          <TemplateFormFields form={createForm} setForm={setCreateForm} />
           <div className="flex justify-end gap-3 pt-4 border-t border-border">
             <button
               type="button"
@@ -185,7 +222,30 @@ export default function Templates() {
               disabled={isCreating}
               className="px-6 py-2.5 font-semibold bg-primary text-primary-foreground rounded-xl shadow-lg shadow-primary/25 hover:-translate-y-0.5 hover:shadow-xl disabled:opacity-50 disabled:transform-none transition-all flex items-center gap-2"
             >
-              {isCreating ? <Loader2 className="w-5 h-5 animate-spin" /> : "Save Template"}
+              {isCreating ? <Loader2 className="w-4 h-4 animate-spin" /> : "Save Template"}
+            </button>
+          </div>
+        </form>
+      </Modal>
+
+      {/* Edit Modal */}
+      <Modal isOpen={!!editTarget} onClose={() => setEditTarget(null)} title="Edit Template">
+        <form onSubmit={handleEdit} className="space-y-4">
+          <TemplateFormFields form={editForm} setForm={setEditForm} />
+          <div className="flex justify-end gap-3 pt-4 border-t border-border">
+            <button
+              type="button"
+              onClick={() => setEditTarget(null)}
+              className="px-4 py-2.5 font-medium text-muted-foreground hover:bg-muted rounded-xl transition-colors"
+            >
+              Cancel
+            </button>
+            <button
+              type="submit"
+              disabled={isUpdating}
+              className="px-6 py-2.5 font-semibold bg-primary text-primary-foreground rounded-xl shadow-lg shadow-primary/25 hover:-translate-y-0.5 hover:shadow-xl disabled:opacity-50 disabled:transform-none transition-all flex items-center gap-2"
+            >
+              {isUpdating ? <Loader2 className="w-4 h-4 animate-spin" /> : "Save Changes"}
             </button>
           </div>
         </form>
