@@ -17,7 +17,7 @@ export const api = {
     create: {
       method: "POST" as const,
       path: "/api/templates" as const,
-      input: TemplateSchema.omit({ id: true }),
+      input: TemplateSchema.omit({ id: true, isDefault: true }),
       responses: {
         201: TemplateSchema,
         400: errorSchemas.validation,
@@ -28,6 +28,14 @@ export const api = {
       path: "/api/templates/:id" as const,
       responses: {
         204: z.void(),
+        404: errorSchemas.notFound,
+      },
+    },
+    setDefault: {
+      method: "POST" as const,
+      path: "/api/templates/:id/default" as const,
+      responses: {
+        200: TemplateSchema,
         404: errorSchemas.notFound,
       },
     },

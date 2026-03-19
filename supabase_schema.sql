@@ -8,7 +8,8 @@ CREATE TABLE IF NOT EXISTS templates (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   name TEXT NOT NULL,
   subject TEXT NOT NULL,
-  content TEXT NOT NULL
+  content TEXT NOT NULL,
+  is_default BOOLEAN NOT NULL DEFAULT FALSE
 );
 
 -- Applications
@@ -50,7 +51,7 @@ CREATE POLICY "allow_all_applications" ON applications FOR ALL USING (true) WITH
 DROP POLICY IF EXISTS "allow_all_documents" ON documents;
 CREATE POLICY "allow_all_documents" ON documents FOR ALL USING (true) WITH CHECK (true);
 
--- Storage bucket for uploaded documents
+-- Storage bucket for uploaded documents/resumes
 INSERT INTO storage.buckets (id, name, public)
 VALUES ('documents', 'documents', true)
 ON CONFLICT (id) DO NOTHING;

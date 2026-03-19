@@ -117,6 +117,15 @@ export async function registerRoutes(
     res.status(204).end();
   });
 
+  app.post("/api/templates/:id/default", async (req, res) => {
+    try {
+      const template = await storage.setDefaultTemplate(req.params.id);
+      res.json(template);
+    } catch (err: any) {
+      res.status(404).json({ message: err.message });
+    }
+  });
+
   // ─── Applications ──────────────────────────────────────────────────────────
 
   app.get(api.applications.list.path, async (req, res) => {
@@ -193,17 +202,18 @@ export async function registerRoutes(
       const finalSubject = injectVariables(template.subject);
       const finalHtml = injectVariables(template.content);
 
-      // Fetch default resume from Supabase and download file for attachment
+      // Fetch selected or default resume and download file for attachment
       try {
-        const defaultResume = await storage.getDefaultDocument("Resume");
+        let resumeDoc = input.resumeId
+          ? await storage.getDocument(input.resumeId)
+          : await storage.getDefaultDocument("Resume");
         let attachments: { filename: string; content: Buffer }[] = [];
 
-        if (defaultResume?.filePath) {
-          // Download file from Supabase Storage URL
-          const fileResp = await fetch(defaultResume.filePath);
+        if (resumeDoc?.filePath) {
+          const fileResp = await fetch(resumeDoc.filePath);
           if (fileResp.ok) {
             const buffer = Buffer.from(await fileResp.arrayBuffer());
-            attachments = [{ filename: defaultResume.fileName, content: buffer }];
+            attachments = [{ filename: resumeDoc.fileName, content: buffer }];
           }
         }
 

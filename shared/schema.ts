@@ -4,11 +4,12 @@ export const TemplateSchema = z.object({
   id: z.string().uuid(),
   name: z.string().min(1, "Name is required"),
   subject: z.string().min(1, "Subject is required"),
-  content: z.string().min(1, "Content is required"), // HTML content with variables
+  content: z.string().min(1, "Content is required"),
+  isDefault: z.boolean().default(false),
 });
 
 export type Template = z.infer<typeof TemplateSchema>;
-export type InsertTemplate = Omit<Template, "id">;
+export type InsertTemplate = Omit<Template, "id" | "isDefault">;
 
 export const ApplicationHistorySchema = z.object({
   status: z.string(),
@@ -56,6 +57,7 @@ export const SendEmailRequestSchema = z.object({
   email: z.string().email("Invalid email address"),
   templateId: z.string().uuid(),
   customMessage: z.string().optional(),
+  resumeId: z.string().uuid().optional(),
 });
 
 export type SendEmailRequest = z.infer<typeof SendEmailRequestSchema>;

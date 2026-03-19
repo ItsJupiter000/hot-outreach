@@ -8,6 +8,7 @@ export interface IStorage {
   getTemplate(id: string): Promise<Template | undefined>;
   createTemplate(template: InsertTemplate): Promise<Template>;
   deleteTemplate(id: string): Promise<void>;
+  setDefaultTemplate(id: string): Promise<Template>;
 
   // Applications
   getApplications(): Promise<Application[]>;
@@ -32,6 +33,7 @@ function mapRowToTemplate(row: any): Template {
     name: row.name,
     subject: row.subject,
     content: row.content,
+    isDefault: row.is_default ?? false,
   };
 }
 
@@ -77,9 +79,12 @@ export class SupabaseStorage implements IStorage {
   }
 
   async createTemplate(insertTemplate: InsertTemplate): Promise<Template> {
+    // If no templates exist yet, make this one the default
+    const existing = await this.getTemplates();
+    const isFirst = existing.length === 0;
     const { data, error } = await supabase
       .from("templates")
-      .insert({ id: randomUUID(), ...insertTemplate })
+      .insert({ id: randomUUID(), ...insertTemplate, is_default: isFirst })
       .select()
       .single();
     if (error) throw new Error(error.message);
@@ -89,6 +94,22 @@ export class SupabaseStorage implements IStorage {
   async deleteTemplate(id: string): Promise<void> {
     const { error } = await supabase.from("templates").delete().eq("id", id);
     if (error) throw new Error(error.message);
+  }
+
+  async setDefaultTemplate(id: string): Promise<Template> {
+    const template = await this.getTemplate(id);
+    if (!template) throw new Error("Template not found");
+    // Clear all defaults
+    await supabase.from("templates").update({ is_default: false }).neq("id", "none");
+    // Set new default
+    const { data, error } = await supabase
+      .from("templates")
+      .update({ is_default: true })
+      .eq("id", id)
+      .select()
+      .single();
+    if (error) throw new Error(error.message);
+    return mapRowToTemplate(data);
   }
 
   // ─── Applications ────────────────────────────────────────────────────────────

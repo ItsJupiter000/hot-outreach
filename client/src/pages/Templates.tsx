@@ -2,12 +2,29 @@ import { useState } from "react";
 import { Layout } from "@/components/layout/Layout";
 import { useTemplates, useCreateTemplate, useDeleteTemplate } from "@/hooks/use-templates";
 import { Modal } from "@/components/ui/Modal";
-import { Plus, Trash2, FileText, Loader2 } from "lucide-react";
+import { Plus, Trash2, FileText, Loader2, Star } from "lucide-react";
+import { useMutation } from "@tanstack/react-query";
+import { queryClient, apiRequest } from "@/lib/queryClient";
+import { useToast } from "@/hooks/use-toast";
 
 export default function Templates() {
   const { data: templates = [], isLoading } = useTemplates();
   const { mutate: createTemplate, isPending: isCreating } = useCreateTemplate();
   const { mutate: deleteTemplate, isPending: isDeleting } = useDeleteTemplate();
+  const { toast } = useToast();
+
+  const setDefaultMutation = useMutation({
+    mutationFn: async (id: string) => {
+      await apiRequest("POST", `/api/templates/${id}/default`);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/templates"] });
+      toast({ title: "Success", description: "Default template updated." });
+    },
+    onError: () => {
+      toast({ title: "Error", description: "Failed to set default template.", variant: "destructive" });
+    },
+  });
 
   const [createModal, setCreateModal] = useState(false);
   const [form, setForm] = useState({ name: "", subject: "", content: "" });
@@ -28,16 +45,18 @@ export default function Templates() {
     }
   };
 
+  const inputClass = "w-full px-4 py-2.5 rounded-xl bg-background border border-border text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-primary focus:ring-4 focus:ring-primary/10 transition-all";
+
   return (
     <Layout>
       <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 mb-8">
         <div>
           <h1 className="text-3xl font-display font-bold text-foreground">Email Templates</h1>
-          <p className="text-muted-foreground mt-2">Manage your outreach content and variables.</p>
+          <p className="text-muted-foreground mt-2">Manage your outreach content. Mark one as default to auto-select it in new outreach.</p>
         </div>
-        <button 
+        <button
           onClick={() => setCreateModal(true)}
-          className="inline-flex items-center justify-center gap-2 px-5 py-3 rounded-xl font-semibold bg-primary text-white shadow-lg shadow-primary/25 hover:shadow-xl hover:-translate-y-0.5 transition-all duration-200 w-full md:w-auto"
+          className="inline-flex items-center justify-center gap-2 px-5 py-3 rounded-xl font-semibold bg-primary text-primary-foreground shadow-lg shadow-primary/25 hover:shadow-xl hover:-translate-y-0.5 transition-all duration-200 w-full md:w-auto"
         >
           <Plus className="w-5 h-5" /> New Template
         </button>
@@ -45,101 +64,126 @@ export default function Templates() {
 
       {isLoading ? (
         <div className="flex justify-center p-12">
-          <Loader2 className="w-8 h-8 animate-spin text-slate-400" />
+          <Loader2 className="w-8 h-8 animate-spin text-muted-foreground" />
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
           {templates.map((template) => (
-            <div key={template.id} className="bg-card rounded-2xl p-6 shadow-card border border-border/50 hover:border-primary/30 hover:shadow-lg transition-all duration-300 flex flex-col group">
+            <div key={template.id} className="bg-card rounded-2xl p-6 shadow-card border border-border/50 hover:border-primary/30 hover:shadow-lg transition-all duration-300 flex flex-col group relative">
+              {template.isDefault && (
+                <div className="absolute -top-3 -right-3 bg-primary text-primary-foreground p-1.5 rounded-full shadow-lg z-10" title="Default template">
+                  <Star className="w-4 h-4 fill-current" />
+                </div>
+              )}
+
               <div className="flex items-start justify-between mb-4">
                 <div className="bg-primary/10 p-2.5 rounded-xl text-primary">
                   <FileText className="w-5 h-5" />
                 </div>
-                <button 
+                <button
                   onClick={() => handleDelete(template.id)}
                   disabled={isDeleting}
-                  className="p-2 text-slate-400 hover:text-destructive hover:bg-destructive/10 rounded-lg opacity-0 group-hover:opacity-100 transition-all focus:opacity-100"
+                  className="p-2 text-muted-foreground hover:text-destructive hover:bg-destructive/10 rounded-lg opacity-0 group-hover:opacity-100 transition-all focus:opacity-100"
                   title="Delete Template"
                 >
                   <Trash2 className="w-4 h-4" />
                 </button>
               </div>
-              <h3 className="text-lg font-bold text-slate-900 mb-1 line-clamp-1">{template.name}</h3>
-              <p className="text-sm font-medium text-slate-500 mb-4 line-clamp-1">Subj: {template.subject}</p>
-              
-              <div className="flex-1 bg-slate-50 rounded-xl p-4 text-sm text-slate-600 line-clamp-4 relative overflow-hidden">
-                {template.content}
-                <div className="absolute inset-x-0 bottom-0 h-12 bg-gradient-to-t from-slate-50 to-transparent pointer-events-none" />
+
+              <h3 className="text-lg font-bold text-foreground mb-1 line-clamp-1">{template.name}</h3>
+              <p className="text-sm font-medium text-muted-foreground mb-4 line-clamp-1">Subj: {template.subject}</p>
+
+              <div className="flex-1 bg-muted rounded-xl p-4 text-sm text-muted-foreground line-clamp-4 relative overflow-hidden mb-4">
+                {template.content.replace(/<[^>]+>/g, " ")}
+                <div className="absolute inset-x-0 bottom-0 h-8 bg-gradient-to-t from-muted to-transparent pointer-events-none" />
+              </div>
+
+              <div className="pt-3 border-t border-border">
+                {!template.isDefault ? (
+                  <button
+                    onClick={() => setDefaultMutation.mutate(template.id)}
+                    disabled={setDefaultMutation.isPending}
+                    className="w-full flex items-center justify-center gap-1.5 text-xs font-semibold text-primary hover:bg-primary/5 py-2 rounded-lg transition-colors"
+                  >
+                    <Star className="w-3.5 h-3.5" />
+                    Set as Default
+                  </button>
+                ) : (
+                  <span className="w-full flex items-center justify-center gap-1.5 text-xs font-semibold text-primary py-2">
+                    <Star className="w-3.5 h-3.5 fill-primary" />
+                    Default Template
+                  </span>
+                )}
               </div>
             </div>
           ))}
 
           {templates.length === 0 && (
-             <div className="col-span-full py-12 text-center border-2 border-dashed border-slate-200 rounded-2xl bg-slate-50/50">
-               <FileText className="w-12 h-12 text-slate-300 mx-auto mb-3" />
-               <h3 className="text-lg font-semibold text-slate-700">No templates found</h3>
-               <p className="text-slate-500 mt-1">Create your first template to get started.</p>
-             </div>
+            <div className="col-span-full py-12 text-center border-2 border-dashed border-border rounded-2xl bg-muted/30">
+              <FileText className="w-12 h-12 text-muted-foreground/30 mx-auto mb-3" />
+              <h3 className="text-lg font-semibold text-foreground">No templates found</h3>
+              <p className="text-muted-foreground mt-1">Create your first template to get started.</p>
+            </div>
           )}
         </div>
       )}
 
-      <Modal 
-        isOpen={createModal} 
+      <Modal
+        isOpen={createModal}
         onClose={() => setCreateModal(false)}
         title="Create New Template"
       >
         <form onSubmit={handleCreate} className="space-y-4">
           <div className="space-y-2">
-            <label className="text-sm font-medium text-slate-700">Template Name</label>
+            <label className="text-sm font-medium text-foreground">Template Name</label>
             <input
               required
               value={form.name}
               onChange={e => setForm(prev => ({ ...prev, name: e.target.value }))}
               placeholder="e.g. Standard Cold Outreach"
-              className="w-full px-4 py-2.5 rounded-xl bg-slate-50 border border-slate-200 text-slate-900 focus:outline-none focus:border-primary focus:ring-4 focus:ring-primary/10 transition-all"
+              className={inputClass}
             />
           </div>
-          
+
           <div className="space-y-2">
-            <label className="text-sm font-medium text-slate-700">Email Subject</label>
+            <label className="text-sm font-medium text-foreground">Email Subject</label>
             <input
               required
               value={form.subject}
               onChange={e => setForm(prev => ({ ...prev, subject: e.target.value }))}
-              placeholder="e.g. Inquiry regarding Software Engineer role at {{companyName}}"
-              className="w-full px-4 py-2.5 rounded-xl bg-slate-50 border border-slate-200 text-slate-900 focus:outline-none focus:border-primary focus:ring-4 focus:ring-primary/10 transition-all"
+              placeholder="e.g. Exploring opportunities at {{companyName}}"
+              className={inputClass}
             />
-            <p className="text-xs text-slate-500">Supports: {'{{companyName}}'}</p>
+            <p className="text-xs text-muted-foreground">Supports: {'{{companyName}}'}</p>
           </div>
 
           <div className="space-y-2">
-            <label className="text-sm font-medium text-slate-700">Email Body</label>
+            <label className="text-sm font-medium text-foreground">Email Body</label>
             <textarea
               required
               value={form.content}
               onChange={e => setForm(prev => ({ ...prev, content: e.target.value }))}
               placeholder="Hi Team, I'm reaching out..."
               rows={8}
-              className="w-full px-4 py-3 rounded-xl bg-slate-50 border border-slate-200 text-slate-900 focus:outline-none focus:border-primary focus:ring-4 focus:ring-primary/10 transition-all resize-none font-sans"
+              className={`${inputClass} resize-none font-sans`}
             />
-            <p className="text-xs text-slate-500">
-              Available variables: {'{{companyName}}'}, {'{{myName}}'}, {'{{myRole}}'}, {'{{customMessage}}'}
+            <p className="text-xs text-muted-foreground">
+              Variables: {'{{companyName}}'}, {'{{myName}}'}, {'{{myRole}}'}, {'{{customMessage}}'}
             </p>
           </div>
 
-          <div className="flex justify-end gap-3 pt-4 border-t border-slate-100">
-            <button 
+          <div className="flex justify-end gap-3 pt-4 border-t border-border">
+            <button
               type="button"
               onClick={() => setCreateModal(false)}
-              className="px-4 py-2.5 font-medium text-slate-600 hover:bg-slate-100 rounded-xl transition-colors"
+              className="px-4 py-2.5 font-medium text-muted-foreground hover:bg-muted rounded-xl transition-colors"
             >
               Cancel
             </button>
-            <button 
+            <button
               type="submit"
               disabled={isCreating}
-              className="px-6 py-2.5 font-semibold bg-primary text-white rounded-xl shadow-lg shadow-primary/25 hover:-translate-y-0.5 hover:shadow-xl disabled:opacity-50 disabled:transform-none transition-all flex items-center gap-2"
+              className="px-6 py-2.5 font-semibold bg-primary text-primary-foreground rounded-xl shadow-lg shadow-primary/25 hover:-translate-y-0.5 hover:shadow-xl disabled:opacity-50 disabled:transform-none transition-all flex items-center gap-2"
             >
               {isCreating ? <Loader2 className="w-5 h-5 animate-spin" /> : "Save Template"}
             </button>
