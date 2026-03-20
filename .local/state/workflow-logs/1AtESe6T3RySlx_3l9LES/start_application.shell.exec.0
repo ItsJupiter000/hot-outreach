@@ -1,0 +1,70 @@
+
+> rest-express@1.0.0 dev
+> NODE_ENV=development tsx server/index.ts
+
+[1G[0K[2m5:11:36 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m Re-optimizing dependencies because lockfile has changed
+5:11:36 PM [express] serving on port 5000
+Internal Server Error: Error: Could not find the table 'public.templates' in the schema cache
+    at SupabaseStorage.getTemplates [90m(/home/runner/workspace/[39mserver/storage.ts:69:22[90m)[39m
+[90m    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)[39m
+    at async <anonymous> [90m(/home/runner/workspace/[39mserver/routes.ts:95:23[90m)[39m
+5:11:42 PM [express] GET /api/templates 500 in 1105ms :: {"message":"Could not find the table 'public.templates' in the schema cache"}
+Internal Server Error: Error: Could not find the table 'public.templates' in the schema cache
+    at SupabaseStorage.getTemplates [90m(/home/runner/workspace/[39mserver/storage.ts:69:22[90m)[39m
+[90m    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)[39m
+    at async <anonymous> [90m(/home/runner/workspace/[39mserver/routes.ts:95:23[90m)[39m
+5:11:43 PM [express] GET /api/templates 500 in 188ms :: {"message":"Could not find the table 'public.templates' in the schema cache"}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+[1;1H[0J[2m5:12:10 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/pages/Dashboard.tsx, /src/index.css[22m
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+[1;1H[0J[2m5:12:11 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/pages/Applications.tsx, /src/index.css[22m
+Internal Server Error: Error: Could not find the table 'public.templates' in the schema cache
+    at SupabaseStorage.getTemplates [90m(/home/runner/workspace/[39mserver/storage.ts:69:22[90m)[39m
+[90m    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)[39m
+    at async <anonymous> [90m(/home/runner/workspace/[39mserver/routes.ts:95:23[90m)[39m
+5:12:12 PM [express] GET /api/templates 500 in 400ms :: {"message":"Could not find the table 'public.templates' in the schema cache"}
+5:14:21 PM [express] GET /api/templates 200 in 641ms :: []
+5:14:33 PM [express] GET /api/applications 200 in 245ms :: []
+5:14:36 PM [express] GET /api/documents 200 in 193ms :: []
+5:15:25 PM [express] GET /api/templates 304 in 331ms :: []
+5:15:36 PM [express] GET /api/templates 200 in 515ms :: []
+5:15:40 PM [express] GET /api/documents 200 in 195ms :: []
+5:17:07 PM [express] GET /api/applications 304 in 582ms :: []
+5:17:13 PM [express] GET /api/documents 200 in 252ms :: []
+5:17:29 PM [express] GET /api/applications 304 in 545ms :: []
+5:17:33 PM [express] GET /api/documents 200 in 236ms :: []
+5:17:48 PM [express] GET /api/applications 304 in 244ms :: []
+5:29:47 PM [express] GET /api/templates 304 in 1059ms :: []

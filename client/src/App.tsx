@@ -5,18 +5,24 @@ import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { ThemeProvider } from "@/components/theme-provider";
 import NotFound from "@/pages/not-found";
-import Dashboard from "@/pages/Dashboard";
+import Home from "@/pages/Home";
+import NewOutreach from "@/pages/NewOutreach";
 import Applications from "@/pages/Applications";
 import Templates from "@/pages/Templates";
 import Documents from "@/pages/Documents";
+import FollowUp from "@/pages/FollowUp";
+import Analytics from "@/pages/Analytics";
 
 function Router() {
   return (
     <Switch>
-      <Route path="/" component={Dashboard} />
+      <Route path="/" component={Home} />
+      <Route path="/new" component={NewOutreach} />
       <Route path="/applications" component={Applications} />
       <Route path="/templates" component={Templates} />
       <Route path="/documents" component={Documents} />
+      <Route path="/followup" component={FollowUp} />
+      <Route path="/analytics" component={Analytics} />
       {/* Fallback to 404 */}
       <Route component={NotFound} />
     </Switch>

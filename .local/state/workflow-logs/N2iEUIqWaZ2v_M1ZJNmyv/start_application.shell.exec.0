@@ -1,0 +1,84 @@
+[1G[0K⠙[1G[0K
+> rest-express@1.0.0 dev
+> NODE_ENV=development tsx server/index.ts
+
+[1G[0K⠙[1G[0K5:44:13 PM [express] serving on port 5000
+5:45:31 PM [express] GET /api/templates 304 in 1176ms :: []
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+[1;1H[0J[2m5:56:04 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/pages/Dashboard.tsx, /src/pages/Templates.tsx, /src/pages/Applications.tsx[22m
+
+
+
+
+
+
+
+[1;1H[0J[2m5:56:06 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/pages/Dashboard.tsx, /src/pages/Templates.tsx, /src/pages/Applications.tsx[22m [33m(x2)[39m
+
+
+
+
+
+
+
+
+[1;1H[0J[2m5:56:11 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/pages/Dashboard.tsx, /src/pages/Templates.tsx, /src/pages/Applications.tsx[22m [33m(x3)[39m
+
+
+
+
+
+
+
+
+
+[1;1H[0J[2m5:57:25 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/pages/Dashboard.tsx, /src/index.css[22m
+5:57:28 PM [express] GET /api/documents 200 in 753ms :: [{"id":"6cebfe48-7140-4e92-8853-ccfa9ccc4414","name":"FINAL.pdf","type":"Resume","filePath":"https://zvtjkqwknkpfqyoexpsg.supabase.co/storage/v1/object/public/documents/1773940808820-FINAL.pdf","fileName":"FINAL.pdf","isDefault":true,"createdAt":"2026-03-19T17:20:10.716+00:00"}]
+
+
+
+
+
+
+
+
+
+
+
+
+
+[1;1H[0J[2m5:57:54 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/pages/Templates.tsx, /src/index.css[22m

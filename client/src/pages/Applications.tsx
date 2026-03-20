@@ -4,7 +4,7 @@ import { useApplications, useUpdateApplication } from "@/hooks/use-applications"
 import { Application, ApplicationStatus } from "@shared/schema";
 import { Modal } from "@/components/ui/Modal";
 import { format } from "date-fns";
-import { Search, Filter, Loader2, Edit3, Save, Trash2 } from "lucide-react";
+import { Search, Filter, Loader2, Edit3, Save, Trash2, ExternalLink } from "lucide-react";
 import { clsx, type ClassValue } from "clsx";
 import { twMerge } from "tailwind-merge";
 import { useMutation } from "@tanstack/react-query";
@@ -17,11 +17,13 @@ function cn(...inputs: ClassValue[]) {
 
 const statusColors: Record<ApplicationStatus, string> = {
   "Applied": "bg-blue-100 text-blue-700 border-blue-200",
+  "Opened": "bg-cyan-100 text-cyan-700 border-cyan-200",
   "Replied": "bg-purple-100 text-purple-700 border-purple-200",
   "Interview": "bg-amber-100 text-amber-700 border-amber-200",
   "Rejected": "bg-red-100 text-red-700 border-red-200",
   "Offer": "bg-emerald-100 text-emerald-700 border-emerald-200",
   "No Response": "bg-slate-100 text-slate-700 border-slate-200",
+  "Follow-up Sent": "bg-orange-100 text-orange-700 border-orange-200",
 };
 
 export default function Applications() {
@@ -120,7 +122,15 @@ export default function Applications() {
                 <div className="flex justify-between items-start">
                   <div>
                     <h3 className="font-bold text-slate-900">{app.companyName}</h3>
-                    <p className="text-sm text-slate-500">{app.email}</p>
+                    <a 
+                      href={`https://mail.google.com/mail/u/0/#search/to:${app.email}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-sm text-primary hover:underline hover:text-primary/80 transition-colors inline-flex items-center gap-1"
+                    >
+                      {app.email}
+                      <ExternalLink className="w-3 h-3" />
+                    </a>
                   </div>
                   <button 
                     onClick={() => handleDelete(app.id)}
@@ -189,7 +199,17 @@ export default function Applications() {
                 applications.map((app) => (
                   <tr key={app.id} className="hover:bg-slate-50/50 transition-colors group">
                     <td className="px-6 py-4 font-medium text-slate-900">{app.companyName}</td>
-                    <td className="px-6 py-4 text-slate-600 text-sm">{app.email}</td>
+                    <td className="px-6 py-4 text-sm">
+                      <a 
+                        href={`https://mail.google.com/mail/u/0/#search/to:${app.email}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-primary hover:underline hover:text-primary/80 transition-colors inline-flex items-center gap-1"
+                      >
+                        {app.email}
+                        <ExternalLink className="w-3 h-3" />
+                      </a>
+                    </td>
                     <td className="px-6 py-4 text-slate-600 text-sm">
                       {format(new Date(app.sentAt), "MMM d, yyyy")}
                     </td>

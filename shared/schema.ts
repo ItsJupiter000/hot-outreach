@@ -18,7 +18,7 @@ export const ApplicationHistorySchema = z.object({
 
 export type ApplicationHistory = z.infer<typeof ApplicationHistorySchema>;
 
-export const ApplicationStatusEnum = z.enum(["Applied", "Replied", "Interview", "Rejected", "Offer", "No Response"]);
+export const ApplicationStatusEnum = z.enum(["Applied", "Opened", "Replied", "Interview", "Rejected", "Offer", "No Response", "Follow-up Sent"]);
 export type ApplicationStatus = z.infer<typeof ApplicationStatusEnum>;
 
 export const ApplicationSchema = z.object({
@@ -31,6 +31,9 @@ export const ApplicationSchema = z.object({
   updatedAt: z.string(), // ISO string
   notes: z.string().optional(),
   history: z.array(ApplicationHistorySchema),
+  followUpTemplateId: z.string().uuid().nullable().optional(),
+  followUpDays: z.number().int().min(1).max(30).nullable().optional(),
+  followUpSentAt: z.string().nullable().optional(),
 });
 
 export type Application = z.infer<typeof ApplicationSchema>;
@@ -58,6 +61,8 @@ export const SendEmailRequestSchema = z.object({
   templateId: z.string().uuid(),
   customMessage: z.string().optional(),
   resumeId: z.string().uuid().optional(),
+  followUpTemplateId: z.string().uuid().optional(),
+  followUpDays: z.number().int().min(1).max(30).optional(),
 });
 
 export type SendEmailRequest = z.infer<typeof SendEmailRequestSchema>;

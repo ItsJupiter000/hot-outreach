@@ -1,4 +1,4 @@
-process.loadEnvFile();
+import "./env";
 import express, { type Request, Response, NextFunction } from "express";
 import { registerRoutes } from "./routes";
 import { serveStatic } from "./static";
@@ -60,8 +60,17 @@ app.use((req, res, next) => {
   next();
 });
 
+import { startReplyPolling } from "./imapService";
+import { startFollowUpCron } from "./followUpService";
+
 (async () => {
   await registerRoutes(httpServer, app);
+
+  // Start polling inbox for replies
+  startReplyPolling();
+
+  // Start follow-up email cron job
+  startFollowUpCron();
 
   app.use((err: any, _req: Request, res: Response, next: NextFunction) => {
     const status = err.status || err.statusCode || 500;
@@ -95,7 +104,6 @@ app.use((req, res, next) => {
     {
       port,
       host: "0.0.0.0",
-      reusePort: true,
     },
     () => {
       log(`serving on port ${port}`);

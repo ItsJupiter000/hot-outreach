@@ -16,6 +16,7 @@ export interface IStorage {
   getApplication(id: string): Promise<Application | undefined>;
   createApplication(app: Omit<Application, "id" | "history">): Promise<Application>;
   updateApplication(id: string, updates: UpdateApplication): Promise<Application>;
+  updateFollowUp(id: string, templateId: string | null, days: number | null): Promise<Application>;
   deleteApplication(id: string): Promise<void>;
   checkDuplicateSend(companyName: string, email: string): Promise<boolean>;
 
@@ -49,6 +50,9 @@ function mapRowToApplication(row: any): Application {
     updatedAt: typeof row.updated_at === "string" ? row.updated_at : new Date(row.updated_at).toISOString(),
     notes: row.notes ?? undefined,
     history: Array.isArray(row.history) ? row.history : [],
+    followUpTemplateId: row.follow_up_template_id ?? null,
+    followUpDays: row.follow_up_days ?? null,
+    followUpSentAt: row.follow_up_sent_at ?? null,
   };
 }
 
@@ -154,7 +158,52 @@ export class SupabaseStorage implements IStorage {
         updated_at: appData.updatedAt,
         notes: appData.notes ?? null,
         history,
+        follow_up_template_id: appData.followUpTemplateId ?? null,
+        follow_up_days: appData.followUpDays ?? null,
+        follow_up_sent_at: null,
       })
+      .select()
+      .single();
+    if (error) throw new Error(error.message);
+    return mapRowToApplication(data);
+  }
+
+  async markFollowUpSent(id: string): Promise<void> {
+    const { error } = await supabase
+      .from("applications")
+      .update({ follow_up_sent_at: new Date().toISOString() })
+      .eq("id", id);
+    if (error) throw new Error(error.message);
+  }
+
+  async getApplicationsDueForFollowUp(): Promise<Application[]> {
+    // Get all apps that have a follow-up configured and not yet sent
+    const { data, error } = await supabase
+      .from("applications")
+      .select("*")
+      .in("status", ["Applied", "Opened"])
+      .not("follow_up_template_id", "is", null)
+      .is("follow_up_sent_at", null);
+    if (error) throw new Error(error.message);
+    const apps = (data ?? []).map(mapRowToApplication);
+    const now = Date.now();
+    return apps.filter((app) => {
+      if (!app.followUpDays) return false;
+      const sentAt = new Date(app.sentAt).getTime();
+      const delayMs = app.followUpDays * 24 * 60 * 60 * 1000;
+      return now >= sentAt + delayMs;
+    });
+  }
+
+  async updateFollowUp(id: string, templateId: string | null, days: number | null): Promise<Application> {
+    const { data, error } = await supabase
+      .from("applications")
+      .update({
+        follow_up_template_id: templateId,
+        follow_up_days: days,
+        follow_up_sent_at: null, // reset sent flag so it can fire again if re-enabled
+      })
+      .eq("id", id)
       .select()
       .single();
     if (error) throw new Error(error.message);

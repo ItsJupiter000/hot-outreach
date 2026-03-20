@@ -184,6 +184,47 @@ export async function registerRoutes(
     res.status(204).end();
   });
 
+  app.patch("/api/applications/:id/followup", async (req, res) => {
+    try {
+      const schema = z.object({
+        templateId: z.string().uuid().nullable(),
+        days: z.number().int().min(1).max(30).nullable(),
+      });
+      const { templateId, days } = schema.parse(req.body);
+      const app = await storage.updateFollowUp(req.params.id, templateId, days);
+      res.json(app);
+    } catch (err: any) {
+      if (err instanceof z.ZodError) {
+        return res.status(400).json({ message: err.errors[0].message });
+      }
+      res.status(500).json({ message: err.message || "Internal Error" });
+    }
+  });
+
+  // ─── Tracking ────────────────────────────────────────────────────────────
+
+  app.get("/api/track/open/:id", async (req, res) => {
+    try {
+      const appRecord = await storage.getApplication(req.params.id);
+      if (appRecord && appRecord.status === "Applied") {
+        console.log("Application opened");
+        await storage.updateApplication(req.params.id, { status: "Opened" });
+      }
+    } catch (e) {
+      console.error("Tracking pixel error:", e);
+    }
+    // Return 1x1 transparent GIF
+    const pixel = Buffer.from("R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7", "base64");
+    res.writeHead(200, {
+      "Content-Type": "image/gif",
+      "Content-Length": pixel.length,
+      "Cache-Control": "no-store, no-cache, must-revalidate, proxy-revalidate",
+      "Pragma": "no-cache",
+      "Expires": "0",
+    });
+    res.end(pixel);
+  });
+
   // ─── Send Email ───────────────────────────────────────────────────────────
 
   app.post(api.email.send.path, async (req, res) => {
@@ -216,11 +257,11 @@ export async function registerRoutes(
       const finalHtml = injectVariables(template.content);
 
       // Fetch selected or default resume and download file for attachment
+      let attachments: { filename: string; content: Buffer }[] = [];
       try {
         let resumeDoc = input.resumeId
           ? await storage.getDocument(input.resumeId)
           : await storage.getDefaultDocument("Resume");
-        let attachments: { filename: string; content: Buffer }[] = [];
 
         if (resumeDoc?.filePath) {
           const fileResp = await fetch(resumeDoc.filePath);
@@ -229,11 +270,8 @@ export async function registerRoutes(
             attachments = [{ filename: resumeDoc.fileName, content: buffer }];
           }
         }
-
-        await sendEmail(input.email, finalSubject, finalHtml, attachments as any);
-      } catch (emailErr) {
-        console.error("Email send failed:", emailErr);
-        return res.status(500).json({ message: "Failed to send email. Check SMTP credentials." });
+      } catch (err) {
+        console.error("Failed to fetch resume attachment:", err);
       }
 
       const now = new Date().toISOString();
@@ -245,7 +283,25 @@ export async function registerRoutes(
         sentAt: now,
         updatedAt: now,
         notes: input.customMessage ? `Custom message: ${input.customMessage}` : undefined,
+        followUpTemplateId: input.followUpTemplateId ?? null,
+        followUpDays: input.followUpDays ?? null,
       });
+
+      // Inject tracking pixel into the email body
+      const protocol = req.headers["x-forwarded-proto"] || req.protocol;
+      const host = req.headers.host;
+      const trackingUrl = `${protocol}://${host}/api/track/open/${appRecord.id}`;
+      const trackingPixel = `<img src="${trackingUrl}" width="1" height="1" alt="" style="display:none;" />`;
+      const htmlWithTracking = finalHtml + trackingPixel;
+
+      try {
+        await sendEmail(input.email, finalSubject, htmlWithTracking, attachments as any);
+      } catch (emailErr) {
+        console.error("Email send failed:", emailErr);
+        // Rollback creation
+        await storage.deleteApplication(appRecord.id);
+        return res.status(500).json({ message: "Failed to send email. Check SMTP credentials." });
+      }
 
       res.status(201).json(appRecord);
     } catch (err: any) {

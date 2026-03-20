@@ -1,5 +1,5 @@
 import { Link, useLocation } from "wouter";
-import { Send, FileText, LayoutDashboard, Settings, Mail, Files, Moon, Sun } from "lucide-react";
+import { Send, FileText, LayoutDashboard, Files, Moon, Sun, Mail, Clock, Settings, BarChart2, Home } from "lucide-react";
 import { clsx, type ClassValue } from "clsx";
 import { twMerge } from "tailwind-merge";
 import { useTheme } from "@/components/theme-provider";
@@ -9,10 +9,13 @@ function cn(...inputs: ClassValue[]) {
 }
 
 const navItems = [
-  { href: "/", label: "New Outreach", icon: Send },
+  { href: "/", label: "Home", icon: Home },
+  { href: "/new", label: "New Outreach", icon: Send },
   { href: "/applications", label: "Applications", icon: LayoutDashboard },
+  { href: "/analytics", label: "Analytics", icon: BarChart2 },
   { href: "/templates", label: "Templates", icon: FileText },
   { href: "/documents", label: "Documents", icon: Files },
+  { href: "/followup", label: "Follow-ups", icon: Clock },
 ];
 
 export function Sidebar() {

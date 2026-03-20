@@ -1,0 +1,141 @@
+
+> rest-express@1.0.0 dev
+> NODE_ENV=development tsx server/index.ts
+
+[1G[0K5:58:10 PM [express] serving on port 5000
+5:58:15 PM [express] GET /api/templates 200 in 629ms :: [{"id":"9bfd2c42-c613-4410-ab12-b486874dcb3a","name":"Job apply","subject":"application for your engineering team — Proof of Work Inside","content":"<p style=\"margin:0 0 8px 0;\">Hello {{companyName}} team,</p>\n\n<p style=\"margin:0 0 8px 0;\">I’m {{myName}}, a software engineer with 1+ year of hands-on experience working across Next.js, .NET/Node.js, PostgreSQL, and some DevOps with Docker and CI/CD pipelines. I’ve also worked on payment gateway integrations, Odoo accounting sync, workflow systems, and real-time dashboards, along with practical exposure to AWS (S3, EC2, RDS).</p>\n\n<p style=\"margin:0 0 8px 0;\">Came across {{companyName}}’s profile and really liked the kind of engineering work you’re doing.</p>\n\n<p style=\"margin:0 0 8px 0;\">If you’re building systems that need someone comfortable across both product and infra, I’d be glad to explore if there’s a way to collaborate. Happy to connect for a quick chat 🙃</p>\n\n<p style=\"margin:0 0 8px 0;\">{{customMessage}}</p>\n\n<p style=\"margin:0 0 8px 0;\">I’ve attached my resume below for context.</p>\n\n<p style=\"margin:0;\">\nThanks!<br/>\n— {{myName}}<br/>\nSoftware Engineer<br/>\nLinkedIn: <a href=\"https://www.linkedin.com/in/uttamgohil/\">https://www.linkedin.com/in/uttamgohil/</a><br/>\nPhone: +91 63540 25414\n</p>","isDefault":false}]
+5:58:15 PM [express] GET /api/documents 304 in 603ms :: [{"id":"6cebfe48-7140-4e92-8853-ccfa9ccc4414","name":"FINAL.pdf","type":"Resume","filePath":"https://zvtjkqwknkpfqyoexpsg.supabase.co/storage/v1/object/public/documents/1773940808820-FINAL.pdf","fileName":"FINAL.pdf","isDefault":true,"createdAt":"2026-03-19T17:20:10.716+00:00"}]
+5:58:16 PM [express] GET /api/templates 200 in 209ms :: [{"id":"9bfd2c42-c613-4410-ab12-b486874dcb3a","name":"Job apply","subject":"application for your engineering team — Proof of Work Inside","content":"<p style=\"margin:0 0 8px 0;\">Hello {{companyName}} team,</p>\n\n<p style=\"margin:0 0 8px 0;\">I’m {{myName}}, a software engineer with 1+ year of hands-on experience working across Next.js, .NET/Node.js, PostgreSQL, and some DevOps with Docker and CI/CD pipelines. I’ve also worked on payment gateway integrations, Odoo accounting sync, workflow systems, and real-time dashboards, along with practical exposure to AWS (S3, EC2, RDS).</p>\n\n<p style=\"margin:0 0 8px 0;\">Came across {{companyName}}’s profile and really liked the kind of engineering work you’re doing.</p>\n\n<p style=\"margin:0 0 8px 0;\">If you’re building systems that need someone comfortable across both product and infra, I’d be glad to explore if there’s a way to collaborate. Happy to connect for a quick chat 🙃</p>\n\n<p style=\"margin:0 0 8px 0;\">{{customMessage}}</p>\n\n<p style=\"margin:0 0 8px 0;\">I’ve attached my resume below for context.</p>\n\n<p style=\"margin:0;\">\nThanks!<br/>\n— {{myName}}<br/>\nSoftware Engineer<br/>\nLinkedIn: <a href=\"https://www.linkedin.com/in/uttamgohil/\">https://www.linkedin.com/in/uttamgohil/</a><br/>\nPhone: +91 63540 25414\n</p>","isDefault":false}]
+5:58:16 PM [express] GET /api/documents 200 in 216ms :: [{"id":"6cebfe48-7140-4e92-8853-ccfa9ccc4414","name":"FINAL.pdf","type":"Resume","filePath":"https://zvtjkqwknkpfqyoexpsg.supabase.co/storage/v1/object/public/documents/1773940808820-FINAL.pdf","fileName":"FINAL.pdf","isDefault":true,"createdAt":"2026-03-19T17:20:10.716+00:00"}]
+5:59:38 PM [express] GET /api/templates 304 in 302ms :: [{"id":"9bfd2c42-c613-4410-ab12-b486874dcb3a","name":"Job apply","subject":"application for your engineering team — Proof of Work Inside","content":"<p style=\"margin:0 0 8px 0;\">Hello {{companyName}} team,</p>\n\n<p style=\"margin:0 0 8px 0;\">I’m {{myName}}, a software engineer with 1+ year of hands-on experience working across Next.js, .NET/Node.js, PostgreSQL, and some DevOps with Docker and CI/CD pipelines. I’ve also worked on payment gateway integrations, Odoo accounting sync, workflow systems, and real-time dashboards, along with practical exposure to AWS (S3, EC2, RDS).</p>\n\n<p style=\"margin:0 0 8px 0;\">Came across {{companyName}}’s profile and really liked the kind of engineering work you’re doing.</p>\n\n<p style=\"margin:0 0 8px 0;\">If you’re building systems that need someone comfortable across both product and infra, I’d be glad to explore if there’s a way to collaborate. Happy to connect for a quick chat 🙃</p>\n\n<p style=\"margin:0 0 8px 0;\">{{customMessage}}</p>\n\n<p style=\"margin:0 0 8px 0;\">I’ve attached my resume below for context.</p>\n\n<p style=\"margin:0;\">\nThanks!<br/>\n— {{myName}}<br/>\nSoftware Engineer<br/>\nLinkedIn: <a href=\"https://www.linkedin.com/in/uttamgohil/\">https://www.linkedin.com/in/uttamgohil/</a><br/>\nPhone: +91 63540 25414\n</p>","isDefault":false}]
+5:59:38 PM [express] GET /api/documents 304 in 579ms :: [{"id":"6cebfe48-7140-4e92-8853-ccfa9ccc4414","name":"FINAL.pdf","type":"Resume","filePath":"https://zvtjkqwknkpfqyoexpsg.supabase.co/storage/v1/object/public/documents/1773940808820-FINAL.pdf","fileName":"FINAL.pdf","isDefault":true,"createdAt":"2026-03-19T17:20:10.716+00:00"}]
+5:59:44 PM [express] GET /api/applications 200 in 224ms :: [{"id":"4464ad2b-dc33-49c2-9902-c33413fdbca7","companyName":"Test comp","email":"upgohil2925@gmail.com","templateId":"9bfd2c42-c613-4410-ab12-b486874dcb3a","status":"Applied","sentAt":"2026-03-19T17:51:16.295+00:00","updatedAt":"2026-03-19T17:51:16.295+00:00","history":[{"date":"2026-03-19T17:51:16.295Z","status":"Applied"}]}]
+5:59:48 PM [express] POST /api/templates/9bfd2c42-c613-4410-ab12-b486874dcb3a/default 404 in 598ms :: {"message":"Could not find the 'is_default' column of 'templates' in the schema cache"}
+5:59:54 PM [express] POST /api/templates/9bfd2c42-c613-4410-ab12-b486874dcb3a/default 404 in 874ms :: {"message":"Could not find the 'is_default' column of 'templates' in the schema cache"}
+6:00:07 PM [express] DELETE /api/templates/9bfd2c42-c613-4410-ab12-b486874dcb3a 204 in 246ms
+6:00:07 PM [express] GET /api/templates 200 in 189ms :: []
+6:00:26 PM [express] POST /api/templates 500 in 664ms :: {"message":"Internal Error"}
+6:00:29 PM [express] POST /api/templates 500 in 360ms :: {"message":"Internal Error"}
+6:02:22 PM [express] POST /api/templates 201 in 1078ms :: {"id":"b353d78b-ec8e-4fd1-91db-981b53f95d09","name":"Job Application","subject":"application for your engineering team — Proof of Work Inside","content":"<p style=\"margin:0 0 8px 0;\">Hello {{companyName}} team,</p>\n\n<p style=\"margin:0 0 8px 0;\">I’m {{myName}}, a software engineer with 1+ year of hands-on experience working across Next.js, .NET/Node.js, PostgreSQL, and some DevOps with Docker and CI/CD pipelines. I’ve also worked on payment gateway integrations, Odoo accounting sync, workflow systems, and real-time dashboards, along with practical exposure to AWS (S3, EC2, RDS).</p>\n\n<p style=\"margin:0 0 8px 0;\">Came across {{companyName}}’s profile and really liked the kind of engineering work you’re doing.</p>\n\n<p style=\"margin:0 0 8px 0;\">If you’re building systems that need someone comfortable across both product and infra, I’d be glad to explore if there’s a way to collaborate. Happy to connect for a quick chat 🙃</p>\n\n<p style=\"margin:0 0 8px 0;\">{{customMessage}}</p>\n\n<p style=\"margin:0 0 8px 0;\">I’ve attached my resume below for context.</p>\n\n<p style=\"margin:0;\">\nThanks!<br/>\n— {{myName}}<br/>\nSoftware Engineer<br/>\nLinkedIn: <a href=\"https://www.linkedin.com/in/uttamgohil/\">https://www.linkedin.com/in/uttamgohil/</a><br/>\nPhone: +91 63540 25414\n</p>","isDefault":true}
+6:02:22 PM [express] GET /api/templates 200 in 217ms :: [{"id":"b353d78b-ec8e-4fd1-91db-981b53f95d09","name":"Job Application","subject":"application for your engineering team — Proof of Work Inside","content":"<p style=\"margin:0 0 8px 0;\">Hello {{companyName}} team,</p>\n\n<p style=\"margin:0 0 8px 0;\">I’m {{myName}}, a software engineer with 1+ year of hands-on experience working across Next.js, .NET/Node.js, PostgreSQL, and some DevOps with Docker and CI/CD pipelines. I’ve also worked on payment gateway integrations, Odoo accounting sync, workflow systems, and real-time dashboards, along with practical exposure to AWS (S3, EC2, RDS).</p>\n\n<p style=\"margin:0 0 8px 0;\">Came across {{companyName}}’s profile and really liked the kind of engineering work you’re doing.</p>\n\n<p style=\"margin:0 0 8px 0;\">If you’re building systems that need someone comfortable across both product and infra, I’d be glad to explore if there’s a way to collaborate. Happy to connect for a quick chat 🙃</p>\n\n<p style=\"margin:0 0 8px 0;\">{{customMessage}}</p>\n\n<p style=\"margin:0 0 8px 0;\">I’ve attached my resume below for context.</p>\n\n<p style=\"margin:0;\">\nThanks!<br/>\n— {{myName}}<br/>\nSoftware Engineer<br/>\nLinkedIn: <a href=\"https://www.linkedin.com/in/uttamgohil/\">https://www.linkedin.com/in/uttamgohil/</a><br/>\nPhone: +91 63540 25414\n</p>","isDefault":true}]
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+[1;1H[0J[2m6:03:37 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/pages/Templates.tsx, /src/pages/Dashboard.tsx, /src/index.css[22m
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+[1;1H[0J[2m6:04:16 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/pages/Templates.tsx, /src/index.css[22m
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+[1;1H[0J[2m6:05:05 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/pages/Templates.tsx, /src/index.css[22m [33m(x2)[39m
+6:07:20 PM [express] PATCH /api/templates/b353d78b-ec8e-4fd1-91db-981b53f95d09 200 in 5ms
+6:07:32 PM [express] PATCH /api/templates/b353d78b-ec8e-4fd1-91db-981b53f95d09 200 in 5ms
+6:08:41 PM [express] DELETE /api/templates/b353d78b-ec8e-4fd1-91db-981b53f95d09 204 in 800ms
+6:08:41 PM [express] GET /api/templates 200 in 199ms :: []
+6:09:52 PM [express] POST /api/templates 201 in 1160ms :: {"id":"1df7f734-b026-4587-a972-882d83489257","name":"Job outreach","subject":"Application for your engineering team — Proof of Work Inside","content":"<p style=\"margin:0 0 8px 0;\">Hello {{companyName}} team,</p>\n\n<p style=\"margin:0 0 8px 0;\">I’m {{myName}}, a software engineer with 1+ year of hands-on experience working across Next.js, .NET/Node.js, PostgreSQL, and some DevOps with Docker and CI/CD pipelines. I’ve also worked on payment gateway integrations, Odoo accounting sync, workflow systems, and real-time dashboards, along with practical exposure to AWS (S3, EC2, RDS).</p>\n\n<p style=\"margin:0 0 8px 0;\">Came across {{companyName}}’s profile and really liked the kind of engineering work you’re doing.</p>\n\n<p style=\"margin:0 0 8px 0;\">If you’re building systems that need someone comfortable across both product and infra, I’d be glad to explore if there’s a way to collaborate. Happy to connect for a quick chat 🙃</p>\n\n<p style=\"margin:0 0 8px 0;\">{{customMessage}}</p>\n\n<p style=\"margin:0 0 8px 0;\">I’ve attached my resume below for context.</p>\n\n<p style=\"margin:0;\">\nThanks!<br/>\n— {{myName}}<br/>\nSoftware Engineer<br/>\nLinkedIn: <a href=\"https://www.linkedin.com/in/uttamgohil/\">https://www.linkedin.com/in/uttamgohil/</a><br/>\nPhone: +91 63540 25414\n</p>","isDefault":true}
+6:09:52 PM [express] GET /api/templates 200 in 213ms :: [{"id":"1df7f734-b026-4587-a972-882d83489257","name":"Job outreach","subject":"Application for your engineering team — Proof of Work Inside","content":"<p style=\"margin:0 0 8px 0;\">Hello {{companyName}} team,</p>\n\n<p style=\"margin:0 0 8px 0;\">I’m {{myName}}, a software engineer with 1+ year of hands-on experience working across Next.js, .NET/Node.js, PostgreSQL, and some DevOps with Docker and CI/CD pipelines. I’ve also worked on payment gateway integrations, Odoo accounting sync, workflow systems, and real-time dashboards, along with practical exposure to AWS (S3, EC2, RDS).</p>\n\n<p style=\"margin:0 0 8px 0;\">Came across {{companyName}}’s profile and really liked the kind of engineering work you’re doing.</p>\n\n<p style=\"margin:0 0 8px 0;\">If you’re building systems that need someone comfortable across both product and infra, I’d be glad to explore if there’s a way to collaborate. Happy to connect for a quick chat 🙃</p>\n\n<p style=\"margin:0 0 8px 0;\">{{customMessage}}</p>\n\n<p style=\"margin:0 0 8px 0;\">I’ve attached my resume below for context.</p>\n\n<p style=\"margin:0;\">\nThanks!<br/>\n— {{myName}}<br/>\nSoftware Engineer<br/>\nLinkedIn: <a href=\"https://www.linkedin.com/in/uttamgohil/\">https://www.linkedin.com/in/uttamgohil/</a><br/>\nPhone: +91 63540 25414\n</p>","isDefault":true}]
+6:12:01 PM [express] GET /api/templates 304 in 419ms :: [{"id":"1df7f734-b026-4587-a972-882d83489257","name":"Job outreach","subject":"Application for your engineering team — Proof of Work Inside","content":"<p style=\"margin:0 0 8px 0;\">Hello {{companyName}} team,</p>\n\n<p style=\"margin:0 0 8px 0;\">I’m {{myName}}, a software engineer with 1+ year of hands-on experience working across Next.js, .NET/Node.js, PostgreSQL, and some DevOps with Docker and CI/CD pipelines. I’ve also worked on payment gateway integrations, Odoo accounting sync, workflow systems, and real-time dashboards, along with practical exposure to AWS (S3, EC2, RDS).</p>\n\n<p style=\"margin:0 0 8px 0;\">Came across {{companyName}}’s profile and really liked the kind of engineering work you’re doing.</p>\n\n<p style=\"margin:0 0 8px 0;\">If you’re building systems that need someone comfortable across both product and infra, I’d be glad to explore if there’s a way to collaborate. Happy to connect for a quick chat 🙃</p>\n\n<p style=\"margin:0 0 8px 0;\">{{customMessage}}</p>\n\n<p style=\"margin:0 0 8px 0;\">I’ve attached my resume below for context.</p>\n\n<p style=\"margin:0;\">\nThanks!<br/>\n— {{myName}}<br/>\nSoftware Engineer<br/>\nLinkedIn: <a href=\"https://www.linkedin.com/in/uttamgohil/\">https://www.linkedin.com/in/uttamgohil/</a><br/>\nPhone: +91 63540 25414\n</p>","isDefault":true}]
+6:12:01 PM [express] GET /api/documents 304 in 434ms :: [{"id":"6cebfe48-7140-4e92-8853-ccfa9ccc4414","name":"FINAL.pdf","type":"Resume","filePath":"https://zvtjkqwknkpfqyoexpsg.supabase.co/storage/v1/object/public/documents/1773940808820-FINAL.pdf","fileName":"FINAL.pdf","isDefault":true,"createdAt":"2026-03-19T17:20:10.716+00:00"}]
+6:12:42 PM [express] GET /api/templates 304 in 275ms :: [{"id":"1df7f734-b026-4587-a972-882d83489257","name":"Job outreach","subject":"Application for your engineering team — Proof of Work Inside","content":"<p style=\"margin:0 0 8px 0;\">Hello {{companyName}} team,</p>\n\n<p style=\"margin:0 0 8px 0;\">I’m {{myName}}, a software engineer with 1+ year of hands-on experience working across Next.js, .NET/Node.js, PostgreSQL, and some DevOps with Docker and CI/CD pipelines. I’ve also worked on payment gateway integrations, Odoo accounting sync, workflow systems, and real-time dashboards, along with practical exposure to AWS (S3, EC2, RDS).</p>\n\n<p style=\"margin:0 0 8px 0;\">Came across {{companyName}}’s profile and really liked the kind of engineering work you’re doing.</p>\n\n<p style=\"margin:0 0 8px 0;\">If you’re building systems that need someone comfortable across both product and infra, I’d be glad to explore if there’s a way to collaborate. Happy to connect for a quick chat 🙃</p>\n\n<p style=\"margin:0 0 8px 0;\">{{customMessage}}</p>\n\n<p style=\"margin:0 0 8px 0;\">I’ve attached my resume below for context.</p>\n\n<p style=\"margin:0;\">\nThanks!<br/>\n— {{myName}}<br/>\nSoftware Engineer<br/>\nLinkedIn: <a href=\"https://www.linkedin.com/in/uttamgohil/\">https://www.linkedin.com/in/uttamgohil/</a><br/>\nPhone: +91 63540 25414\n</p>","isDefault":true}]
+6:12:42 PM [express] GET /api/documents 304 in 540ms :: [{"id":"6cebfe48-7140-4e92-8853-ccfa9ccc4414","name":"FINAL.pdf","type":"Resume","filePath":"https://zvtjkqwknkpfqyoexpsg.supabase.co/storage/v1/object/public/documents/1773940808820-FINAL.pdf","fileName":"FINAL.pdf","isDefault":true,"createdAt":"2026-03-19T17:20:10.716+00:00"}]

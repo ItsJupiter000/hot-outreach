@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { TemplateSchema, ApplicationSchema, SendEmailRequestSchema } from "./schema";
+import { TemplateSchema, ApplicationSchema, SendEmailRequestSchema, ApplicationStatusEnum } from "./schema";
 
 export const errorSchemas = {
   validation: z.object({ message: z.string(), field: z.string().optional() }),
@@ -53,7 +53,7 @@ export const api = {
     update: {
       method: "PATCH" as const,
       path: "/api/applications/:id" as const,
-      input: z.object({ status: z.string().optional(), notes: z.string().optional() }),
+      input: z.object({ status: ApplicationStatusEnum.optional(), notes: z.string().optional() }),
       responses: {
         200: ApplicationSchema,
         400: errorSchemas.validation,
