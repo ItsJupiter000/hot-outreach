@@ -3,6 +3,11 @@ import express, { type Request, Response, NextFunction } from "express";
 import { registerRoutes } from "./routes";
 import { serveStatic } from "./static";
 import { createServer } from "http";
+import dns from "dns";
+
+// Force Node.js to prioritize IPv4 over IPv6. 
+// Fixes ENETUNREACH errors on Windows when trying to connect to Gmail via IPv6 without a valid route.
+dns.setDefaultResultOrder("ipv4first");
 
 const app = express();
 const httpServer = createServer(app);
