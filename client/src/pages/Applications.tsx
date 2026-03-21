@@ -10,6 +10,7 @@ import { twMerge } from "tailwind-merge";
 import { useMutation } from "@tanstack/react-query";
 import { queryClient, apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
+import { motion, AnimatePresence } from "framer-motion";
 
 function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
@@ -79,22 +80,22 @@ export default function Applications() {
         
         <div className="flex gap-3">
           <div className="relative">
-            <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+            <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
             <input 
               type="text" 
               placeholder="Search companies..." 
               value={search}
               onChange={e => setSearch(e.target.value)}
-              className="pl-9 pr-4 py-2 bg-white border border-slate-200 rounded-lg text-sm focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/10 w-full md:w-64 transition-all"
+              className="pl-9 pr-4 py-2 bg-background border border-border rounded-lg text-sm focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/10 w-full md:w-64 transition-all"
             />
           </div>
           
           <div className="relative">
-            <Filter className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+            <Filter className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
             <select 
               value={statusFilter}
               onChange={e => setStatusFilter(e.target.value)}
-              className="pl-9 pr-8 py-2 bg-white border border-slate-200 rounded-lg text-sm focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/10 appearance-none transition-all"
+              className="pl-9 pr-8 py-2 bg-background border border-border rounded-lg text-sm focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/10 appearance-none transition-all"
             >
               <option value="">All Statuses</option>
               {Object.keys(statusColors).map(s => (
@@ -106,67 +107,87 @@ export default function Applications() {
       </div>
 
       <div className="bg-card rounded-2xl shadow-card border border-border/50 overflow-hidden">
-        {/* Mobile-friendly list view (hidden on desktop) */}
-        <div className="md:hidden divide-y divide-border">
+        {/* Mobile-friendly card view (hidden on desktop) */}
+        <div className="md:hidden">
           {isLoading ? (
-            <div className="p-8 text-center text-slate-400">
-              <Loader2 className="w-6 h-6 animate-spin mx-auto" />
+            <div className="p-12 text-center text-slate-400">
+              <Loader2 className="w-8 h-8 animate-spin mx-auto opacity-20" />
             </div>
           ) : applications.length === 0 ? (
-            <div className="p-8 text-center text-slate-400">
+            <div className="p-12 text-center text-slate-400 italic font-medium">
               No applications found matching your criteria.
             </div>
           ) : (
-            applications.map((app) => (
-              <div key={app.id} className="p-4 space-y-3">
-                <div className="flex justify-between items-start">
-                  <div>
-                    <h3 className="font-bold text-slate-900">{app.companyName}</h3>
-                    <a 
-                      href={`https://mail.google.com/mail/u/0/#search/to:${app.email}`}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-sm text-primary hover:underline hover:text-primary/80 transition-colors inline-flex items-center gap-1"
-                    >
-                      {app.email}
-                      <ExternalLink className="w-3 h-3" />
-                    </a>
-                  </div>
-                  <button 
-                    onClick={() => handleDelete(app.id)}
-                    className="p-2 text-slate-400 hover:text-red-500"
+            <div className="divide-y divide-border/50">
+              <AnimatePresence mode="popLayout">
+                {applications.map((app, idx) => (
+                  <motion.div 
+                    key={app.id} 
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, scale: 0.95 }}
+                    transition={{ delay: idx * 0.05, duration: 0.3 }}
+                    className="p-5 space-y-4 hover:bg-slate-50 dark:hover:bg-slate-900/40 transition-colors relative group"
                   >
-                    <Trash2 className="w-4 h-4" />
-                  </button>
-                </div>
-                <div className="flex justify-between items-center pt-1">
-                  <span className="text-xs text-slate-400">{format(new Date(app.sentAt), "MMM d, yyyy")}</span>
-                  <div className="relative inline-block">
-                    <select
-                      value={app.status}
-                      onChange={(e) => handleStatusChange(app.id, e.target.value as ApplicationStatus)}
-                      className={cn(
-                        "appearance-none pl-3 pr-7 py-1 rounded-full text-[10px] font-bold border cursor-pointer focus:outline-none transition-all",
-                        statusColors[app.status as ApplicationStatus] || statusColors["Applied"]
-                      )}
-                    >
-                      {Object.keys(statusColors).map(s => (
-                        <option key={s} value={s}>{s}</option>
-                      ))}
-                    </select>
-                    <div className="absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none opacity-50">
-                      <svg width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><path d="m6 9 6 6 6-6"/></svg>
+                    <div className="flex justify-between items-start">
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 mb-1">
+                          <h3 className="font-black text-slate-900 dark:text-white uppercase tracking-tight truncate">{app.companyName}</h3>
+                          <div className={`w-1.5 h-1.5 rounded-full ${app.status === 'Replied' ? 'bg-purple-500 animate-pulse' : 'bg-slate-300'}`} />
+                        </div>
+                        <a 
+                          href={`https://mail.google.com/mail/u/0/#search/to:${app.email}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-[11px] font-black text-primary hover:underline transition-colors inline-flex items-center gap-1 uppercase tracking-widest opacity-80"
+                        >
+                          {app.email}
+                          <ExternalLink className="w-2.5 h-2.5" />
+                        </a>
+                      </div>
+                      <div className="flex items-center gap-2 shrink-0">
+                         <button 
+                          onClick={() => openNotes(app)}
+                          className="p-2.5 text-slate-400 hover:text-primary bg-slate-50 dark:bg-slate-800 rounded-xl border border-slate-100 dark:border-slate-700 transition-all active:scale-90"
+                         >
+                           <Edit3 className="w-4 h-4" />
+                         </button>
+                         <button 
+                          onClick={() => handleDelete(app.id)}
+                          className="p-2.5 text-slate-300 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-xl transition-all active:scale-90"
+                         >
+                           <Trash2 className="w-4 h-4" />
+                         </button>
+                      </div>
                     </div>
-                  </div>
-                </div>
-                <button 
-                  onClick={() => openNotes(app)}
-                  className="w-full text-center py-2 text-sm font-medium text-slate-600 bg-slate-50 rounded-lg border border-slate-100"
-                >
-                  View/Edit Notes
-                </button>
-              </div>
-            ))
+
+                    <div className="flex justify-between items-center bg-slate-50 dark:bg-slate-900/50 p-3 rounded-2xl border border-slate-100 dark:border-slate-800/60">
+                      <div className="flex flex-col">
+                        <span className="text-[10px] font-black text-slate-400 uppercase tracking-[0.1em]">Deployment Date</span>
+                        <span className="text-xs font-black text-slate-600 dark:text-slate-400">{format(new Date(app.sentAt), "MMM d, yyyy")}</span>
+                      </div>
+                      <div className="relative inline-block">
+                        <select
+                          value={app.status}
+                          onChange={(e) => handleStatusChange(app.id, e.target.value as ApplicationStatus)}
+                          className={cn(
+                            "appearance-none pl-4 pr-10 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest border-2 cursor-pointer focus:outline-none transition-all shadow-sm active:scale-95",
+                            statusColors[app.status as ApplicationStatus] || statusColors["Applied"]
+                          )}
+                        >
+                          {Object.keys(statusColors).map(s => (
+                            <option key={s} value={s}>{s}</option>
+                          ))}
+                        </select>
+                        <div className="absolute right-3.5 top-1/2 -translate-y-1/2 pointer-events-none opacity-50">
+                          <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><path d="m6 9 6 6 6-6"/></svg>
+                        </div>
+                      </div>
+                    </div>
+                  </motion.div>
+                ))}
+              </AnimatePresence>
+            </div>
           )}
         </div>
 
@@ -174,7 +195,7 @@ export default function Applications() {
         <div className="hidden md:block overflow-x-auto">
           <table className="w-full text-left border-collapse">
             <thead>
-              <tr className="bg-slate-50/50 border-b border-border text-sm font-semibold text-slate-500">
+              <tr className="bg-slate-50/50 dark:bg-slate-900/50 border-b border-border text-sm font-semibold text-muted-foreground">
                 <th className="px-6 py-4">Company</th>
                 <th className="px-6 py-4">Email</th>
                 <th className="px-6 py-4">Sent Date</th>
@@ -183,74 +204,93 @@ export default function Applications() {
               </tr>
             </thead>
             <tbody className="divide-y divide-border">
-              {isLoading ? (
-                <tr>
-                  <td colSpan={5} className="px-6 py-12 text-center text-slate-400">
-                    <Loader2 className="w-6 h-6 animate-spin mx-auto" />
-                  </td>
-                </tr>
-              ) : applications.length === 0 ? (
-                <tr>
-                  <td colSpan={5} className="px-6 py-12 text-center text-slate-400">
-                    No applications found matching your criteria.
-                  </td>
-                </tr>
-              ) : (
-                applications.map((app) => (
-                  <tr key={app.id} className="hover:bg-slate-50/50 transition-colors group">
-                    <td className="px-6 py-4 font-medium text-slate-900">{app.companyName}</td>
-                    <td className="px-6 py-4 text-sm">
-                      <a 
-                        href={`https://mail.google.com/mail/u/0/#search/to:${app.email}`}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="text-primary hover:underline hover:text-primary/80 transition-colors inline-flex items-center gap-1"
-                      >
-                        {app.email}
-                        <ExternalLink className="w-3 h-3" />
-                      </a>
+              <AnimatePresence mode="popLayout">
+                {isLoading ? (
+                  <motion.tr 
+                    key="loading"
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    exit={{ opacity: 0 }}
+                  >
+                    <td colSpan={5} className="px-6 py-12 text-center text-slate-400">
+                      <Loader2 className="w-6 h-6 animate-spin mx-auto" />
                     </td>
-                    <td className="px-6 py-4 text-slate-600 text-sm">
-                      {format(new Date(app.sentAt), "MMM d, yyyy")}
+                  </motion.tr>
+                ) : applications.length === 0 ? (
+                  <motion.tr 
+                    key="empty"
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    exit={{ opacity: 0 }}
+                  >
+                    <td colSpan={5} className="px-6 py-12 text-center text-slate-400">
+                      No applications found matching your criteria.
                     </td>
-                    <td className="px-6 py-4">
-                      <div className="relative inline-block">
-                        <select
-                          value={app.status}
-                          onChange={(e) => handleStatusChange(app.id, e.target.value as ApplicationStatus)}
-                          className={cn(
-                            "appearance-none pl-3 pr-8 py-1 rounded-full text-xs font-semibold border cursor-pointer focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all",
-                            statusColors[app.status as ApplicationStatus] || statusColors["Applied"]
-                          )}
+                  </motion.tr>
+                ) : (
+                  applications.map((app) => (
+                    <motion.tr 
+                      key={app.id} 
+                      layout
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      exit={{ opacity: 0 }}
+                      className="hover:bg-slate-50/50 dark:hover:bg-slate-800/50 transition-colors group"
+                    >
+                      <td className="px-6 py-4 font-black text-foreground uppercase tracking-tight">{app.companyName}</td>
+                      <td className="px-6 py-4 text-sm">
+                        <a 
+                          href={`https://mail.google.com/mail/u/0/#search/to:${app.email}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-primary hover:underline hover:text-primary/80 transition-colors inline-flex items-center gap-1 font-black uppercase tracking-widest text-[11px]"
                         >
-                          {Object.keys(statusColors).map(s => (
-                            <option key={s} value={s}>{s}</option>
-                          ))}
-                        </select>
-                        <div className="absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none opacity-50">
-                          <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="m6 9 6 6 6-6"/></svg>
+                          {app.email}
+                          <ExternalLink className="w-3 h-3" />
+                        </a>
+                      </td>
+                      <td className="px-6 py-4 font-bold text-slate-500 text-xs uppercase tracking-tight">
+                        {format(new Date(app.sentAt), "MMM d, yyyy")}
+                      </td>
+                      <td className="px-6 py-4">
+                        <div className="relative inline-block">
+                          <select
+                            value={app.status}
+                            onChange={(e) => handleStatusChange(app.id, e.target.value as ApplicationStatus)}
+                            className={cn(
+                              "appearance-none pl-4 pr-10 py-1.5 rounded-xl text-[10px] font-black uppercase tracking-widest border-2 cursor-pointer focus:outline-none transition-all shadow-sm active:scale-95",
+                              statusColors[app.status as ApplicationStatus] || statusColors["Applied"]
+                            )}
+                          >
+                            {Object.keys(statusColors).map(s => (
+                              <option key={s} value={s}>{s}</option>
+                            ))}
+                          </select>
+                          <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none opacity-50">
+                            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="m6 9 6 6 6-6"/></svg>
+                          </div>
                         </div>
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 text-right flex items-center justify-end gap-2">
-                      <button 
-                        onClick={() => openNotes(app)}
-                        className="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium text-slate-600 hover:text-primary hover:bg-primary/5 rounded-lg transition-colors"
-                      >
-                        <Edit3 className="w-4 h-4" />
-                        Notes
-                      </button>
-                      <button 
-                        onClick={() => handleDelete(app.id)}
-                        className="p-1.5 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors"
-                        title="Delete record"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </button>
-                    </td>
-                  </tr>
-                ))
-              )}
+                      </td>
+                      <td className="px-6 py-4 text-right flex items-center justify-end gap-2">
+                        <button 
+                          onClick={() => openNotes(app)}
+                          className="inline-flex items-center gap-1.5 px-4 py-2 text-[11px] font-black uppercase tracking-widest text-slate-600 hover:text-primary hover:bg-primary/5 rounded-xl transition-colors border border-transparent hover:border-primary/10"
+                        >
+                          <Edit3 className="w-4 h-4" />
+                          Notes
+                        </button>
+                        <button 
+                          onClick={() => handleDelete(app.id)}
+                          className="p-2 text-slate-300 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/10 rounded-xl transition-all active:scale-90"
+                          title="Delete record"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      </td>
+                    </motion.tr>
+                  ))
+                )}
+              </AnimatePresence>
             </tbody>
           </table>
         </div>

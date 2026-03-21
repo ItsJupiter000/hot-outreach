@@ -2,45 +2,46 @@ import { useState, useEffect } from "react";
 import { Layout } from "@/components/layout/Layout";
 import { useTemplates } from "@/hooks/use-templates";
 import { useApplications } from "@/hooks/use-applications";
-import { useMutation } from "@tanstack/react-query";
+import { useMutation, useQuery } from "@tanstack/react-query";
 import { queryClient, apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
-import { Application } from "@shared/schema";
+import { Application, Settings } from "@shared/schema";
 import {
   Clock,
   FileText,
-  ToggleLeft,
-  ToggleRight,
   Save,
   Loader2,
   Zap,
   CheckCircle2,
   RefreshCw,
+  Calendar,
+  AlertCircle,
+  ArrowRight,
+  Settings2,
+  Mail,
+  Send,
+  Sparkles,
+  ListTodo,
+  ChevronDown,
+  ChevronUp,
+  ExternalLink,
+  User,
+  Hash
 } from "lucide-react";
-import { format } from "date-fns";
-
-const LS_KEY = "followup_global_settings";
-
-function loadSettings() {
-  try {
-    const raw = localStorage.getItem(LS_KEY);
-    if (raw) return JSON.parse(raw) as { enabled: boolean; templateId: string; days: number };
-  } catch {}
-  return { enabled: false, templateId: "", days: 4 };
-}
+import { format, addDays } from "date-fns";
+import { motion, AnimatePresence } from "framer-motion";
+import { useSettings } from "@/hooks/use-settings";
 
 export default function FollowUp() {
   const { data: templates = [], isLoading: isLoadingTemplates } = useTemplates();
   const { data: applications = [], isLoading: isLoadingApps } = useApplications({});
+  const { settings, updateSettings, isUpdating } = useSettings();
   const { toast } = useToast();
+  const [expandedId, setExpandedId] = useState<string | null>(null);
 
-  const [settings, setSettings] = useState(loadSettings);
-  const [isSaving, setIsSaving] = useState(false);
-
-  // Persist to localStorage whenever settings change
-  useEffect(() => {
-    localStorage.setItem(LS_KEY, JSON.stringify(settings));
-  }, [settings]);
+  const { data: dueApps = [] } = useQuery<Application[]>({
+    queryKey: ["/api/applications/follow-ups-due"],
+  });
 
   const updateAll = useMutation({
     mutationFn: async ({ templateId, days }: { templateId: string | null; days: number | null }) => {
@@ -55,33 +56,23 @@ export default function FollowUp() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/applications"] });
+      toast({
+        title: "Settings Applied",
+        description: "Follow-up configuration has been updated for all active applications.",
+      });
     },
   });
 
-  const handleSave = async () => {
-    if (settings.enabled && !settings.templateId) {
-      toast({ title: "Select a template", description: "Please choose a follow-up template first.", variant: "destructive" });
-      return;
-    }
-    setIsSaving(true);
-    try {
-      await updateAll.mutateAsync(
-        settings.enabled
-          ? { templateId: settings.templateId, days: settings.days }
-          : { templateId: null, days: null }
-      );
-      toast({
-        title: settings.enabled ? "Follow-ups scheduled!" : "Follow-ups disabled",
-        description: settings.enabled
-          ? `All active applications will receive a follow-up after ${settings.days} day${settings.days !== 1 ? "s" : ""}.`
-          : "Follow-up emails have been cancelled for all active applications.",
-      });
-    } catch {
-      toast({ title: "Error", description: "Failed to apply settings.", variant: "destructive" });
-    } finally {
-      setIsSaving(false);
-    }
-  };
+  const sendFollowUpMutation = useMutation({
+    mutationFn: async (appId: string) => {
+      await apiRequest("POST", `/api/applications/${appId}/followup/send`);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/applications/follow-ups-due"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/applications"] });
+      toast({ title: "Follow-up Sent" });
+    },
+  });
 
   const activeApps = applications.filter(
     (a: Application) => a.status === "Applied" || a.status === "Opened"
@@ -91,188 +82,286 @@ export default function FollowUp() {
   );
   const sentApps = applications.filter((a: Application) => a.status === "Follow-up Sent");
 
-  const selectedTemplate = templates.find(t => t.id === settings.templateId);
+  const selectedTemplate = templates.find(t => t.id === (settings as any)?.followUpTemplateId);
 
-  const inputClass =
-    "w-full px-4 py-3 rounded-xl bg-background border border-border text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-primary focus:ring-4 focus:ring-primary/10 transition-all";
+  const stats = [
+    { label: "Active Applications", value: activeApps.length, icon: Mail, color: "text-blue-500", bg: "bg-blue-50 dark:bg-blue-900/20" },
+    { label: "Scheduled Follow-ups", value: scheduledApps.length, icon: Calendar, color: "text-amber-500", bg: "bg-amber-50 dark:bg-amber-900/20" },
+    { label: "Follow-ups Sent", value: sentApps.length, icon: CheckCircle2, color: "text-emerald-500", bg: "bg-emerald-50 dark:bg-emerald-900/20" },
+  ];
 
   return (
     <Layout>
-      <div className="mb-8">
-        <h1 className="text-3xl font-display font-bold text-foreground">Follow-up Sequences</h1>
-        <p className="text-muted-foreground mt-2">
-          Configure a global follow-up email that automatically goes out to all active applications.
-        </p>
-      </div>
-
-      {/* Stats */}
-      <div className="grid grid-cols-3 gap-4 mb-8">
-        <div className="bg-card border border-border rounded-2xl p-4 flex items-center gap-3">
-          <div className="bg-blue-100 text-blue-600 rounded-xl p-2.5"><Clock className="w-5 h-5" /></div>
+      <div className="relative mb-10">
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
           <div>
-            <p className="text-2xl font-bold text-foreground">{activeApps.length}</p>
-            <p className="text-xs text-muted-foreground">Active apps</p>
-          </div>
-        </div>
-        <div className="bg-card border border-border rounded-2xl p-4 flex items-center gap-3">
-          <div className="bg-amber-100 text-amber-600 rounded-xl p-2.5"><RefreshCw className="w-5 h-5" /></div>
-          <div>
-            <p className="text-2xl font-bold text-foreground">{scheduledApps.length}</p>
-            <p className="text-xs text-muted-foreground">Scheduled</p>
-          </div>
-        </div>
-        <div className="bg-card border border-border rounded-2xl p-4 flex items-center gap-3">
-          <div className="bg-emerald-100 text-emerald-600 rounded-xl p-2.5"><CheckCircle2 className="w-5 h-5" /></div>
-          <div>
-            <p className="text-2xl font-bold text-foreground">{sentApps.length}</p>
-            <p className="text-xs text-muted-foreground">Follow-ups sent</p>
-          </div>
-        </div>
-      </div>
-
-      {/* Global config card */}
-      <div className="bg-card border border-border rounded-2xl shadow-sm overflow-hidden mb-8">
-        {/* Header with master toggle */}
-        <div className="px-6 py-5 flex items-center justify-between border-b border-border">
-          <div className="flex items-center gap-3">
-            <div className="bg-primary/10 text-primary rounded-xl p-2.5">
-              <Zap className="w-5 h-5" />
+            <div className="flex items-center gap-2 mb-2">
+              <div className="px-2 py-0.5 rounded-full bg-primary/10 text-primary text-[10px] font-bold uppercase tracking-wider">Automation</div>
+              <Sparkles className="w-4 h-4 text-amber-400" />
             </div>
-            <div>
-              <h2 className="font-semibold text-foreground">Global Follow-up</h2>
-              <p className="text-xs text-muted-foreground">Applies to all active applications at once</p>
-            </div>
-          </div>
-
-          {/* Big toggle */}
-          <button
-            type="button"
-            onClick={() => setSettings(s => ({ ...s, enabled: !s.enabled }))}
-            className="flex items-center gap-2 transition-colors"
-          >
-            {settings.enabled ? (
-              <>
-                <ToggleRight className="w-12 h-12 text-primary" />
-                <span className="text-base font-bold text-primary">ON</span>
-              </>
-            ) : (
-              <>
-                <ToggleLeft className="w-12 h-12 text-muted-foreground" />
-                <span className="text-base font-bold text-muted-foreground">OFF</span>
-              </>
-            )}
-          </button>
-        </div>
-
-        {/* Settings body */}
-        <div className={`px-6 py-6 space-y-6 transition-opacity duration-200 ${!settings.enabled ? "opacity-40 pointer-events-none" : ""}`}>
-
-          {/* Template selector */}
-          <div className="space-y-2">
-            <label className="text-sm font-semibold text-foreground/80 flex items-center gap-2">
-              <FileText className="w-4 h-4 text-primary" /> Follow-up Email Template
-            </label>
-            <div className="relative">
-              <select
-                value={settings.templateId}
-                onChange={e => setSettings(s => ({ ...s, templateId: e.target.value }))}
-                className={`${inputClass} appearance-none cursor-pointer`}
-                disabled={isLoadingTemplates || !settings.enabled}
-              >
-                <option value="">Select a template...</option>
-                {templates.map(t => (
-                  <option key={t.id} value={t.id}>
-                    {t.name}{t.isDefault ? " ★ (default)" : ""}
-                  </option>
-                ))}
-              </select>
-              <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-muted-foreground">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="m6 9 6 6 6-6" />
-                </svg>
-              </div>
-            </div>
-            {selectedTemplate && (
-              <p className="text-xs text-muted-foreground">
-                Subject preview: <span className="italic">{selectedTemplate.subject}</span>
-              </p>
-            )}
-          </div>
-
-          {/* Day slider */}
-          <div className="space-y-2">
-            <label className="text-sm font-semibold text-foreground/80 flex items-center gap-2">
-              <Clock className="w-4 h-4 text-primary" /> Send after (days with no reply)
-            </label>
-            <div className="flex items-center gap-4">
-              <input
-                type="range"
-                min={1}
-                max={14}
-                value={settings.days}
-                onChange={e => setSettings(s => ({ ...s, days: Number(e.target.value) }))}
-                className="flex-1 accent-primary h-2"
-                disabled={!settings.enabled}
-              />
-              <span className="text-lg font-bold text-primary w-20 text-center">
-                {settings.days} day{settings.days !== 1 ? "s" : ""}
-              </span>
-            </div>
-            <p className="text-xs text-muted-foreground">
-              If the recipient hasn't replied after {settings.days} day{settings.days !== 1 ? "s" : ""}, a follow-up will be sent.
+            <h1 className="text-4xl font-display font-black text-foreground tracking-tight">Follow-up Sequences</h1>
+            <p className="text-muted-foreground mt-2 max-w-xl text-lg">
+              Smart automation to keep your application threads alive. Configure once, automate many.
             </p>
           </div>
-        </div>
-
-        {/* Save / Apply button */}
-        <div className="px-6 py-4 bg-muted/30 border-t border-border flex items-center justify-between gap-4">
-          <p className="text-sm text-muted-foreground">
-            {settings.enabled
-              ? `Will apply to ${activeApps.length} active application${activeApps.length !== 1 ? "s" : ""}.`
-              : "Toggle on to schedule follow-up emails."}
-          </p>
-          <button
-            onClick={handleSave}
-            disabled={isSaving}
-            className="inline-flex items-center gap-2 px-6 py-2.5 rounded-xl text-sm font-semibold bg-primary text-primary-foreground shadow-md hover:shadow-lg hover:-translate-y-0.5 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
-          >
-            {isSaving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
-            {settings.enabled ? "Apply to All Applications" : "Disable Follow-ups"}
-          </button>
+          
+          <div className="flex items-center gap-3">
+             <div className={`flex items-center gap-3 px-4 py-2 rounded-2xl border transition-all ${settings?.followUpsEnabled ? 'bg-emerald-50 border-emerald-200 dark:bg-emerald-900/20 dark:border-emerald-800' : 'bg-slate-50 border-slate-200 dark:bg-slate-900/20 dark:border-slate-800'}`}>
+                <div className={`w-2 h-2 rounded-full ${settings?.followUpsEnabled ? 'bg-emerald-500 animate-pulse' : 'bg-slate-400'}`} />
+                <span className={`text-sm font-bold ${settings?.followUpsEnabled ? 'text-emerald-700 dark:text-emerald-400' : 'text-slate-500'}`}>
+                  {settings?.followUpsEnabled ? 'System Active' : 'System Paused'}
+                </span>
+             </div>
+          </div>
         </div>
       </div>
 
-      {/* Scheduled list */}
-      {scheduledApps.length > 0 && (
-        <div className="bg-card border border-border rounded-2xl overflow-hidden">
-          <div className="px-6 py-4 border-b border-border bg-muted/30">
-            <h3 className="font-semibold text-foreground text-sm">Scheduled Follow-ups</h3>
-          </div>
-          <div className="divide-y divide-border">
-            {scheduledApps.map((app: Application) => {
-              const due = (app as any).followUpDays
-                ? new Date(new Date(app.sentAt).getTime() + (app as any).followUpDays * 86400000)
-                : null;
-              return (
-                <div key={app.id} className="px-6 py-4 flex items-center justify-between">
-                  <div>
-                    <p className="font-medium text-foreground">{app.companyName}</p>
-                    <p className="text-sm text-muted-foreground">{app.email}</p>
-                  </div>
-                  <div className="text-right">
-                    <p className="text-sm font-semibold text-amber-600">
-                      {due ? `Due ${format(due, "MMM d, yyyy")}` : "Pending"}
-                    </p>
-                    <p className="text-xs text-muted-foreground">
-                      Sent {format(new Date(app.sentAt), "MMM d")}
-                    </p>
-                  </div>
+      {/* Modern Stats Grid */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
+        {stats.map((s, i) => (
+          <motion.div
+            key={s.label}
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: i * 0.1 }}
+            className="bg-card border border-border rounded-3xl p-6 shadow-sm hover:shadow-md transition-all group"
+          >
+            <div className={`${s.bg} w-12 h-12 rounded-2xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform`}>
+              <s.icon className={`w-6 h-6 ${s.color}`} />
+            </div>
+            <p className="text-4xl font-black text-foreground mb-1 tracking-tight">{s.value}</p>
+            <p className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">{s.label}</p>
+          </motion.div>
+        ))}
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+        {/* Left Column: Configuration */}
+        <div className="lg:col-span-5 space-y-8">
+          <div className="bg-card border border-border rounded-3xl overflow-hidden shadow-xl shadow-slate-200/50 dark:shadow-none">
+            <div className="bg-slate-50/50 dark:bg-slate-900/50 px-8 py-6 border-b border-border flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <Settings2 className="w-5 h-5 text-primary" />
+                <h2 className="font-bold text-lg">Auto-Apply Settings</h2>
+              </div>
+              {isUpdating && <Loader2 className="w-4 h-4 animate-spin text-primary" />}
+            </div>
+            
+            <div className="p-8 space-y-8">
+              <div className="space-y-3">
+                <label className="text-sm font-bold text-foreground/80 flex items-center gap-2">
+                  <FileText className="w-4 h-4 text-primary" /> Default Sequence Template
+                </label>
+                <select
+                  value={(settings as any)?.followUpTemplateId || ""}
+                  onChange={e => updateSettings({ followUpTemplateId: e.target.value })}
+                  className="w-full px-5 py-4 rounded-2xl bg-slate-50 dark:bg-slate-900 border border-border text-foreground font-medium focus:outline-none focus:ring-4 focus:ring-primary/10 transition-all appearance-none cursor-pointer"
+                >
+                  <option value="">Choose a template...</option>
+                  {templates.map(t => (
+                    <option key={t.id} value={t.id}>{t.name}</option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="space-y-3">
+                <div className="flex items-center justify-between">
+                  <label className="text-sm font-bold text-foreground/80 flex items-center gap-2">
+                    <Clock className="w-4 h-4 text-primary" /> Silence Threshold
+                  </label>
+                  <span className="text-primary font-black text-xl">
+                    {(settings as any)?.followUpDays || 4} <span className="text-xs uppercase">Days</span>
+                  </span>
                 </div>
-              );
-            })}
+                <input
+                  type="range"
+                  min={1}
+                  max={14}
+                  value={(settings as any)?.followUpDays || 4}
+                  onChange={e => updateSettings({ followUpDays: Number(e.target.value) })}
+                  className="w-full h-2 bg-slate-200 dark:bg-slate-800 rounded-lg appearance-none cursor-pointer accent-primary"
+                />
+                <p className="text-[11px] text-muted-foreground font-medium leading-relaxed">
+                  The system will automatically bump the thread if no response is detected within this window.
+                </p>
+              </div>
+
+              <button
+                onClick={() => updateAll.mutate({ 
+                  templateId: (settings as any)?.followUpTemplateId, 
+                  days: (settings as any)?.followUpDays 
+                })}
+                disabled={updateAll.isPending || !(settings as any)?.followUpTemplateId}
+                className="w-full flex items-center justify-center gap-3 px-6 py-4 rounded-2xl bg-primary text-primary-foreground font-black text-lg shadow-lg shadow-primary/20 hover:shadow-xl hover:-translate-y-1 transition-all disabled:opacity-50 disabled:translate-y-0"
+              >
+                {updateAll.isPending ? <Loader2 className="w-6 h-6 animate-spin" /> : <Zap className="w-6 h-6" />}
+                Sync Individual Records
+              </button>
+            </div>
+          </div>
+
+          {/* Quick Tip */}
+          <div className="bg-indigo-50 dark:bg-indigo-950/30 border border-indigo-100 dark:border-indigo-900/50 rounded-3xl p-6 flex gap-4">
+            <AlertCircle className="w-6 h-6 text-indigo-500 shrink-0" />
+            <div>
+              <p className="font-bold text-indigo-900 dark:text-indigo-300 text-sm">Pro Tip: Personalization counts</p>
+              <p className="text-indigo-700/70 dark:text-indigo-400/70 text-xs mt-1 leading-relaxed">
+                Automated follow-ups work best when they feel human. Use variables like <code className="bg-indigo-200/50 px-1 rounded">{"{{companyName}}"}</code> to keep them contextual.
+              </p>
+            </div>
           </div>
         </div>
-      )}
+
+        {/* Right Column: Execution Queue */}
+        <div className="lg:col-span-7 space-y-6">
+          <div className="flex items-center justify-between px-2">
+            <h3 className="font-black text-xl text-foreground flex items-center gap-2">
+              <ListTodo className="w-6 h-6 text-primary" /> The Queue
+            </h3>
+            <span className="text-xs font-bold text-muted-foreground uppercase tracking-widest">{dueApps.length + scheduledApps.length} Total</span>
+          </div>
+
+          <div className="space-y-4 pb-20 lg:pb-0">
+            <AnimatePresence mode="popLayout">
+              {dueApps.length === 0 && scheduledApps.length === 0 && (
+                <motion.div 
+                  initial={{ opacity: 0, scale: 0.95 }} 
+                  animate={{ opacity: 1, scale: 1 }}
+                  className="bg-card border-2 border-dashed border-border rounded-[2.5rem] p-12 text-center"
+                >
+                  <Mail className="w-12 h-12 text-muted mx-auto mb-4 opacity-20" />
+                  <p className="font-black text-foreground uppercase tracking-widest text-sm">Clear Horizons</p>
+                  <p className="text-xs text-muted-foreground mt-1 font-medium italic">No pending action items detected.</p>
+                </motion.div>
+              )}
+
+              {/* Due Now Items */}
+              {dueApps.map((app, idx) => {
+                const appTemplate = templates.find(t => t.id === app.followUpTemplateId) || selectedTemplate;
+
+                return (
+                  <motion.div
+                    key={app.id}
+                    layout
+                    initial={{ opacity: 0, y: 15 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: idx * 0.05 }}
+                    className="bg-primary/[0.03] dark:bg-primary/[0.02] border border-primary/10 rounded-[2rem] overflow-hidden group hover:border-primary/30 transition-all p-5 shadow-sm relative"
+                  >
+                    <div className="absolute top-0 right-0 p-3">
+                       <span className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-red-500 text-white text-[9px] font-black uppercase tracking-widest shadow-lg shadow-red-500/20">
+                         <Zap className="w-2.5 h-2.5 fill-current" /> Due
+                       </span>
+                    </div>
+
+                    <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
+                      <div className="flex items-start md:items-center gap-4 flex-1 min-w-0">
+                        <div className="w-14 h-14 rounded-2xl bg-primary text-white flex items-center justify-center font-black text-xl shadow-xl shadow-primary/20 shrink-0">
+                          {app.companyName.charAt(0)}
+                        </div>
+                        <div className="min-w-0 flex-1">
+                          <h4 className="font-black text-slate-900 dark:text-white text-lg uppercase tracking-tight truncate mb-1">{app.companyName}</h4>
+                          <div className="flex flex-col gap-1">
+                             <a
+                                href={`https://mail.google.com/mail/u/0/#search/to:${app.email}`}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="text-[11px] font-black text-primary hover:underline flex items-center gap-1.5 uppercase tracking-widest opacity-80"
+                              >
+                                {app.email}
+                                <ExternalLink className="w-2.5 h-2.5" />
+                              </a>
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="grid grid-cols-2 md:grid-cols-3 gap-3 md:border-l border-primary/10 md:pl-6">
+                        <div className="bg-white dark:bg-slate-900/50 p-2.5 rounded-2xl border border-slate-100 dark:border-slate-800">
+                          <p className="text-[9px] font-black uppercase text-slate-400 tracking-widest mb-1 leading-none">Due Since</p>
+                          <div className="flex items-center gap-1.5 text-[10px] font-black text-red-600">
+                            <Clock className="w-3 h-3" />
+                            {format(addDays(new Date(app.sentAt), app.followUpDays || settings?.followUpDays || 4), "MMM d")}
+                          </div>
+                        </div>
+                        <div className="bg-white dark:bg-slate-900/50 p-2.5 rounded-2xl border border-slate-100 dark:border-slate-800 hidden md:block text-slate-400">
+                          <p className="text-[9px] font-black uppercase text-slate-400 tracking-widest mb-1 leading-none">Sequence</p>
+                           <p className="text-[10px] font-black truncate">{appTemplate?.name || "Default"}</p>
+                        </div>
+                        <div className="bg-white dark:bg-slate-900/50 p-2.5 rounded-2xl border border-slate-100 dark:border-slate-800">
+                          <p className="text-[9px] font-black uppercase text-slate-400 tracking-widest mb-1 leading-none">Rule</p>
+                          <div className="flex items-center gap-1.5 text-[10px] font-black text-slate-600 dark:text-slate-400">
+                            <Hash className="w-3 h-3 text-primary" />
+                            {app.followUpDays || settings?.followUpDays || 4} Days
+                          </div>
+                        </div>
+                      </div>
+
+                      <button
+                        onClick={() => sendFollowUpMutation.mutate(app.id)}
+                        disabled={sendFollowUpMutation.isPending}
+                        className="w-full md:w-auto bg-primary text-white h-12 md:h-14 px-8 rounded-2xl shadow-xl shadow-primary/20 hover:scale-[1.02] active:scale-95 transition-all flex items-center justify-center gap-3 font-black text-xs uppercase tracking-widest"
+                      >
+                        {sendFollowUpMutation.isPending && sendFollowUpMutation.variables === app.id ? (
+                          <Loader2 className="w-5 h-5 animate-spin" />
+                        ) : (
+                          <>
+                            Deploy
+                            <Send className="w-4 h-4" />
+                          </>
+                        )}
+                      </button>
+                    </div>
+                  </motion.div>
+                );
+              })}
+
+              {/* Scheduled Items */}
+              {scheduledApps.map((app, idx) => {
+                const appTemplate = templates.find(t => t.id === app.followUpTemplateId) || selectedTemplate;
+
+                return (
+                  <motion.div
+                    key={app.id}
+                    layout
+                    initial={{ opacity: 0, y: 15 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: (dueApps.length + idx) * 0.05 }}
+                    className="bg-card border border-border rounded-[2rem] p-5 shadow-sm group hover:border-primary/20 transition-all opacity-80"
+                  >
+                    <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
+                      <div className="flex items-center gap-4 flex-1 min-w-0">
+                        <div className="w-14 h-14 rounded-2xl bg-slate-50 dark:bg-slate-900 text-slate-400 flex items-center justify-center font-black text-xl shrink-0 border border-slate-100 dark:border-slate-800">
+                          {app.companyName.charAt(0)}
+                        </div>
+                        <div className="min-w-0 flex-1">
+                          <h4 className="font-black text-slate-700 dark:text-slate-300 text-lg uppercase tracking-tight truncate mb-1">{app.companyName}</h4>
+                          <div className="flex items-center gap-2">
+                            <span className="px-2 py-0.5 rounded-full bg-amber-50 text-amber-600 dark:bg-amber-900/20 dark:text-amber-400 text-[9px] font-black uppercase tracking-widest border border-amber-100 dark:border-amber-900/50 flex items-center gap-1">
+                              <Clock className="w-2.5 h-2.5" /> Scheduled
+                            </span>
+                            <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">
+                               Next Drop: {format(addDays(new Date(app.sentAt), (app as any).followUpDays || 4), "MMM d")}
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="flex items-center gap-4 md:border-l border-slate-100 dark:border-slate-800 md:pl-6 shrink-0">
+                        <div className="hidden md:block">
+                          <p className="text-[9px] font-black uppercase text-slate-400 tracking-widest mb-1">Queue</p>
+                          <p className="text-xs font-black text-slate-600 dark:text-slate-400 uppercase tracking-tight">{appTemplate?.name || "Default"}</p>
+                        </div>
+                        <ArrowRight className="w-5 h-5 text-slate-300 group-hover:text-primary transition-all group-hover:translate-x-1" />
+                      </div>
+                    </div>
+                  </motion.div>
+                );
+              })}
+            </AnimatePresence>
+          </div>
+        </div>
+      </div>
     </Layout>
   );
 }
+

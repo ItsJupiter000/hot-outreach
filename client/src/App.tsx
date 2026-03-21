@@ -12,6 +12,8 @@ import Templates from "@/pages/Templates";
 import Documents from "@/pages/Documents";
 import FollowUp from "@/pages/FollowUp";
 import Analytics from "@/pages/Analytics";
+import Settings from "@/pages/Settings";
+import Scheduled from "@/pages/Scheduled";
 
 function Router() {
   return (
@@ -23,6 +25,8 @@ function Router() {
       <Route path="/documents" component={Documents} />
       <Route path="/followup" component={FollowUp} />
       <Route path="/analytics" component={Analytics} />
+      <Route path="/settings" component={Settings} />
+      <Route path="/scheduled" component={Scheduled} />
       {/* Fallback to 404 */}
       <Route component={NotFound} />
     </Switch>

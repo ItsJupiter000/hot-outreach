@@ -1,4 +1,4 @@
-import { Application, InsertTemplate, Template, UpdateApplication, Document, InsertDocument } from "@shared/schema";
+import { Application, InsertTemplate, Template, UpdateApplication, Document, InsertDocument, Settings, UpdateSettings } from "@shared/schema";
 import { supabase } from "./supabaseClient";
 import { randomUUID } from "crypto";
 
@@ -27,6 +27,10 @@ export interface IStorage {
   createDocument(doc: InsertDocument): Promise<Document>;
   deleteDocument(id: string): Promise<void>;
   setDefaultDocument(id: string): Promise<Document>;
+
+  // Settings
+  getSettings(): Promise<Settings>;
+  updateSettings(updates: UpdateSettings): Promise<Settings>;
 }
 
 function mapRowToTemplate(row: any): Template {
@@ -65,6 +69,24 @@ function mapRowToDocument(row: any): Document {
     fileName: row.file_name,
     isDefault: row.is_default,
     createdAt: typeof row.created_at === "string" ? row.created_at : new Date(row.created_at).toISOString(),
+  };
+}
+
+function mapRowToSettings(row: any): Settings {
+  return {
+    id: row.id,
+    followUpsEnabled: row.follow_ups_enabled,
+    schedulingEnabled: row.scheduling_enabled,
+    replyPollingEnabled: row.reply_polling_enabled,
+    followUpIntervalMinutes: row.follow_up_interval_minutes,
+    schedulingIntervalMinutes: row.scheduling_interval_minutes,
+    replyPollingIntervalMinutes: row.reply_polling_interval_minutes,
+    followUpTemplateId: row.follow_up_template_id,
+    followUpDays: row.follow_up_days,
+    lastFollowUpAt: row.last_follow_up_at ? new Date(row.last_follow_up_at).toISOString() : null,
+    lastSchedulingAt: row.last_scheduling_at ? new Date(row.last_scheduling_at).toISOString() : null,
+    lastReplyPollingAt: row.last_reply_polling_at ? new Date(row.last_reply_polling_at).toISOString() : null,
+    updatedAt: typeof row.updated_at === "string" ? row.updated_at : new Date(row.updated_at).toISOString(),
   };
 }
 
@@ -177,20 +199,29 @@ export class SupabaseStorage implements IStorage {
   }
 
   async getApplicationsDueForFollowUp(): Promise<Application[]> {
-    // Get all apps that have a follow-up configured and not yet sent
+    // Get global settings for fallbacks
+    const settings = await this.getSettings();
+    
+    // Get all apps that are in a state eligible for follow-up and haven't had one sent yet
     const { data, error } = await supabase
       .from("applications")
       .select("*")
       .in("status", ["Applied", "Opened"])
-      .not("follow_up_template_id", "is", null)
       .is("follow_up_sent_at", null);
+    
     if (error) throw new Error(error.message);
     const apps = (data ?? []).map(mapRowToApplication);
     const now = Date.now();
+
     return apps.filter((app) => {
-      if (!app.followUpDays) return false;
+      // Use app-specific value if present, else fallback to global setting
+      const templateId = app.followUpTemplateId || settings.followUpTemplateId;
+      const days = app.followUpDays || settings.followUpDays;
+
+      if (!templateId || !days) return false;
+
       const sentAt = new Date(app.sentAt).getTime();
-      const delayMs = app.followUpDays * 24 * 60 * 60 * 1000;
+      const delayMs = days * 24 * 60 * 60 * 1000;
       return now >= sentAt + delayMs;
     });
   }
@@ -335,6 +366,64 @@ export class SupabaseStorage implements IStorage {
       .single();
     if (error) throw new Error(error.message);
     return mapRowToDocument(data);
+  }
+
+  // ─── Settings ─────────────────────────────────────────────────────────────
+
+  async getSettings(): Promise<Settings> {
+    const { data, error } = await supabase
+      .from("settings")
+      .select("*")
+      .eq("id", "global")
+      .maybeSingle();
+    
+    if (error) throw new Error(error.message);
+    if (!data) {
+      // Create if doesn't exist (safety)
+      const { data: newData, error: createError } = await supabase
+        .from("settings")
+        .insert({ 
+          id: "global", 
+          follow_ups_enabled: true, 
+          scheduling_enabled: true, 
+          reply_polling_enabled: true,
+          follow_up_interval_minutes: 60,
+          scheduling_interval_minutes: 360,
+          reply_polling_interval_minutes: 5
+        })
+        .select()
+        .single();
+      if (createError) throw new Error(createError.message);
+      return mapRowToSettings(newData);
+    }
+    return mapRowToSettings(data);
+  }
+
+  async updateSettings(updates: UpdateSettings): Promise<Settings> {
+    const dbUpdates: any = {
+      updated_at: new Date().toISOString()
+    };
+    if (updates.followUpsEnabled !== undefined) dbUpdates.follow_ups_enabled = updates.followUpsEnabled;
+    if (updates.schedulingEnabled !== undefined) dbUpdates.scheduling_enabled = updates.schedulingEnabled;
+    if (updates.replyPollingEnabled !== undefined) dbUpdates.reply_polling_enabled = updates.replyPollingEnabled;
+    if (updates.followUpIntervalMinutes !== undefined) dbUpdates.follow_up_interval_minutes = updates.followUpIntervalMinutes;
+    if (updates.schedulingIntervalMinutes !== undefined) dbUpdates.scheduling_interval_minutes = updates.schedulingIntervalMinutes;
+    if (updates.replyPollingIntervalMinutes !== undefined) dbUpdates.reply_polling_interval_minutes = updates.replyPollingIntervalMinutes;
+    if (updates.followUpTemplateId !== undefined) dbUpdates.follow_up_template_id = updates.followUpTemplateId;
+    if (updates.followUpDays !== undefined) dbUpdates.follow_up_days = updates.followUpDays;
+    if (updates.lastFollowUpAt !== undefined) dbUpdates.last_follow_up_at = updates.lastFollowUpAt;
+    if (updates.lastSchedulingAt !== undefined) dbUpdates.last_scheduling_at = updates.lastSchedulingAt;
+    if (updates.lastReplyPollingAt !== undefined) dbUpdates.last_reply_polling_at = updates.lastReplyPollingAt;
+
+    const { data, error } = await supabase
+      .from("settings")
+      .update(dbUpdates)
+      .eq("id", "global")
+      .select()
+      .single();
+    
+    if (error) throw new Error(error.message);
+    return mapRowToSettings(data);
   }
 }
 

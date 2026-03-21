@@ -22,13 +22,21 @@ export function useSendEmail() {
         throw new Error(errorData.message || "Failed to send email");
       }
       
-      return api.email.send.responses[201].parse(await res.json());
+      const json = await res.json();
+      if (res.status === 202) {
+        return json; // Scheduled response
+      }
+      
+      return api.email.send.responses[201].parse(json);
     },
-    onSuccess: () => {
+    onSuccess: (data, variables) => {
       queryClient.invalidateQueries({ queryKey: [api.applications.list.path] });
+      
+      const isScheduled = !!variables.scheduledFor;
+      
       toast({ 
-        title: "Email Sent Successfully! 🚀", 
-        description: "Your outreach has been delivered and logged." 
+        title: isScheduled ? "Email Scheduled! ⏱️" : "Email Sent Successfully! 🚀", 
+        description: isScheduled ? "Your outreach will be sent at the selected time." : "Your outreach has been delivered and logged." 
       });
     },
     onError: (error: Error) => {

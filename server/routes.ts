@@ -8,6 +8,11 @@ import { sendEmail } from "./mailService";
 import path from "path";
 import multer from "multer";
 import fs from "fs";
+import { scheduledService } from "./scheduledService";
+import { processFollowUps, sendSingleFollowUp } from "./followUpService";
+import { pollInbox } from "./imapService";
+import { randomUUID } from "crypto";
+import { SendEmailRequest } from "@shared/schema";
 
 const upload = multer({ storage: multer.memoryStorage() });
 
@@ -139,6 +144,69 @@ export async function registerRoutes(
     }
   });
 
+  // ─── Settings ─────────────────────────────────────────────────────────────
+
+  app.get("/api/settings", async (req, res) => {
+    try {
+      const settings = await storage.getSettings();
+      res.json(settings);
+    } catch (err: any) {
+      res.status(500).json({ message: err.message });
+    }
+  });
+
+  app.patch("/api/settings", async (req, res) => {
+    try {
+      const updates = req.body;
+      const settings = await storage.updateSettings(updates);
+      res.json(settings);
+    } catch (err: any) {
+      res.status(500).json({ message: err.message });
+    }
+  });
+
+  app.post("/api/settings/sync", async (req, res) => {
+    try {
+      const { feature } = req.body;
+      const protocol = req.headers["x-forwarded-proto"] || req.protocol;
+      const host = req.headers.host || "localhost";
+
+      if (feature === "scheduling") {
+        await runScheduledSends(protocol as string, host as string);
+      } else if (feature === "followUps") {
+        await processFollowUps();
+      } else if (feature === "replyPolling") {
+        await pollInbox();
+      } else {
+        return res.status(400).json({ message: "Invalid feature" });
+      }
+
+      res.json({ message: `${feature} sync completed` });
+    } catch (err: any) {
+      res.status(500).json({ message: err.message });
+    }
+  });
+
+  app.get("/api/applications/follow-ups-due", async (req, res) => {
+    try {
+      const apps = await storage.getApplicationsDueForFollowUp();
+      res.json(apps);
+    } catch (err: any) {
+      res.status(500).json({ message: err.message });
+    }
+  });
+
+  app.post("/api/applications/:id/followup/send", async (req, res) => {
+    try {
+      const app = await storage.getApplication(req.params.id);
+      if (!app) return res.status(404).json({ message: "Application not found" });
+      await sendSingleFollowUp(app);
+      res.json({ message: "Follow-up sent successfully" });
+    } catch (err: any) {
+      res.status(500).json({ message: err.message });
+    }
+  });
+
   // ─── Applications ──────────────────────────────────────────────────────────
 
   app.get(api.applications.list.path, async (req, res) => {
@@ -184,6 +252,39 @@ export async function registerRoutes(
     res.status(204).end();
   });
 
+  // ─── Scheduled Emails ────────────────────────────────────────────────────────
+  app.get("/api/scheduled", async (req, res) => {
+    try {
+      const scheduled = await scheduledService.getAll();
+      res.json(scheduled);
+    } catch (err: any) {
+      res.status(500).json({ message: err.message || "Internal Error" });
+    }
+  });
+
+  app.delete("/api/scheduled/:id", async (req, res) => {
+    try {
+      await scheduledService.remove(req.params.id);
+      res.status(204).end();
+    } catch (err: any) {
+      res.status(500).json({ message: err.message || "Internal Error" });
+    }
+  });
+
+  app.post("/api/scheduled/:id/send", async (req, res) => {
+    try {
+      const all = await scheduledService.getAll();
+      const email = all.find(e => e.id === req.params.id);
+      if (!email) return res.status(404).json({ message: "Scheduled email not found" });
+
+      await executeEmailSend(email, email.protocol || "http", email.host || "localhost");
+      await scheduledService.remove(req.params.id);
+      res.json({ message: "Sent successfully" });
+    } catch (err: any) {
+      res.status(500).json({ message: err.message || "Internal Error" });
+    }
+  });
+
   app.patch("/api/applications/:id/followup", async (req, res) => {
     try {
       const schema = z.object({
@@ -225,84 +326,99 @@ export async function registerRoutes(
     res.end(pixel);
   });
 
+async function executeEmailSend(
+  input: SendEmailRequest,
+  protocol: string,
+  host: string
+) {
+  const isDuplicate = await storage.checkDuplicateSend(input.companyName, input.email);
+  if (isDuplicate) {
+    throw new Error("An email was already sent to this company/email within the last 24 hours.");
+  }
+
+  const template = await storage.getTemplate(input.templateId);
+  if (!template) {
+    throw new Error("Template not found");
+  }
+
+  const myName = process.env.MY_NAME || "Your Name";
+  const myRole = process.env.MY_ROLE || "Software Engineer";
+
+  const injectVariables = (text: string) =>
+    text
+      .replace(/\{\{companyName\}\}/g, input.companyName)
+      .replace(/\{\{myName\}\}/g, myName)
+      .replace(/\{\{myRole\}\}/g, myRole)
+      .replace(/\{\{customMessage\}\}/g, input.customMessage || "");
+
+  const finalSubject = injectVariables(template.subject);
+  const finalHtml = injectVariables(template.content);
+
+  // Fetch selected or default resume and download file for attachment
+  let attachments: { filename: string; content: Buffer }[] = [];
+  try {
+    let resumeDoc = input.resumeId
+      ? await storage.getDocument(input.resumeId)
+      : await storage.getDefaultDocument("Resume");
+
+    if (resumeDoc?.filePath) {
+      const fileResp = await fetch(resumeDoc.filePath);
+      if (fileResp.ok) {
+        const buffer = Buffer.from(await fileResp.arrayBuffer());
+        attachments = [{ filename: resumeDoc.fileName, content: buffer }];
+      }
+    }
+  } catch (err) {
+    console.error("Failed to fetch resume attachment:", err);
+  }
+
+  const now = new Date().toISOString();
+  const appRecord = await storage.createApplication({
+    companyName: input.companyName,
+    email: input.email,
+    templateId: input.templateId,
+    status: "Applied",
+    sentAt: now,
+    updatedAt: now,
+    notes: input.customMessage ? `Custom message: ${input.customMessage}` : undefined,
+    followUpTemplateId: input.followUpTemplateId ?? null,
+    followUpDays: input.followUpDays ?? null,
+  });
+
+  const trackingUrl = `${protocol}://${host}/api/track/open/${appRecord.id}`;
+  const trackingPixel = `<img src="${trackingUrl}" width="1" height="1" alt="" style="display:none;" />`;
+  const htmlWithTracking = finalHtml + trackingPixel;
+
+  try {
+    await sendEmail(input.email, finalSubject, htmlWithTracking, attachments as any);
+  } catch (emailErr) {
+    console.error("Email send failed:", emailErr);
+    await storage.deleteApplication(appRecord.id);
+    throw new Error("Failed to send email. Check SMTP credentials.");
+  }
+  return appRecord;
+}
+
   // ─── Send Email ───────────────────────────────────────────────────────────
 
   app.post(api.email.send.path, async (req, res) => {
     try {
       const input = api.email.send.input.parse(req.body);
-
-      const isDuplicate = await storage.checkDuplicateSend(input.companyName, input.email);
-      if (isDuplicate) {
-        return res.status(429).json({
-          message: "An email was already sent to this company/email within the last 24 hours.",
-        });
-      }
-
-      const template = await storage.getTemplate(input.templateId);
-      if (!template) {
-        return res.status(400).json({ message: "Template not found" });
-      }
-
-      const myName = process.env.MY_NAME || "Your Name";
-      const myRole = process.env.MY_ROLE || "Software Engineer";
-
-      const injectVariables = (text: string) =>
-        text
-          .replace(/\{\{companyName\}\}/g, input.companyName)
-          .replace(/\{\{myName\}\}/g, myName)
-          .replace(/\{\{myRole\}\}/g, myRole)
-          .replace(/\{\{customMessage\}\}/g, input.customMessage || "");
-
-      const finalSubject = injectVariables(template.subject);
-      const finalHtml = injectVariables(template.content);
-
-      // Fetch selected or default resume and download file for attachment
-      let attachments: { filename: string; content: Buffer }[] = [];
-      try {
-        let resumeDoc = input.resumeId
-          ? await storage.getDocument(input.resumeId)
-          : await storage.getDefaultDocument("Resume");
-
-        if (resumeDoc?.filePath) {
-          const fileResp = await fetch(resumeDoc.filePath);
-          if (fileResp.ok) {
-            const buffer = Buffer.from(await fileResp.arrayBuffer());
-            attachments = [{ filename: resumeDoc.fileName, content: buffer }];
-          }
-        }
-      } catch (err) {
-        console.error("Failed to fetch resume attachment:", err);
-      }
-
-      const now = new Date().toISOString();
-      const appRecord = await storage.createApplication({
-        companyName: input.companyName,
-        email: input.email,
-        templateId: input.templateId,
-        status: "Applied",
-        sentAt: now,
-        updatedAt: now,
-        notes: input.customMessage ? `Custom message: ${input.customMessage}` : undefined,
-        followUpTemplateId: input.followUpTemplateId ?? null,
-        followUpDays: input.followUpDays ?? null,
-      });
-
-      // Inject tracking pixel into the email body
       const protocol = req.headers["x-forwarded-proto"] || req.protocol;
-      const host = req.headers.host;
-      const trackingUrl = `${protocol}://${host}/api/track/open/${appRecord.id}`;
-      const trackingPixel = `<img src="${trackingUrl}" width="1" height="1" alt="" style="display:none;" />`;
-      const htmlWithTracking = finalHtml + trackingPixel;
+      const host = req.headers.host || "localhost";
 
-      try {
-        await sendEmail(input.email, finalSubject, htmlWithTracking, attachments as any);
-      } catch (emailErr) {
-        console.error("Email send failed:", emailErr);
-        // Rollback creation
-        await storage.deleteApplication(appRecord.id);
-        return res.status(500).json({ message: "Failed to send email. Check SMTP credentials." });
+      if (input.scheduledFor && new Date(input.scheduledFor).getTime() > Date.now()) {
+        await scheduledService.add({
+          id: randomUUID(),
+          ...input,
+          scheduledFor: input.scheduledFor as string,
+          protocol: protocol as string,
+          host: host as string
+        });
+        return res.status(202).json({ message: "Email scheduled successfully" });
       }
 
+      const appRecord = await executeEmailSend(input, protocol as string, host as string);
       res.status(201).json(appRecord);
     } catch (err: any) {
       if (err instanceof z.ZodError) {
@@ -311,9 +427,67 @@ export async function registerRoutes(
           field: err.errors[0].path.join("."),
         });
       }
-      res.status(500).json({ message: "Internal Error" });
+      res.status(500).json({ message: err.message || "Internal Error" });
     }
   });
+
+  async function runScheduledSends(protocol: string, host: string) {
+    try {
+      const dueEmails = await scheduledService.popDueEmails();
+      if (dueEmails.length > 0) {
+        console.log(`Heartbeat: Sending ${dueEmails.length} scheduled emails.`);
+      }
+      for (const email of dueEmails) {
+        try {
+          await executeEmailSend(email, email.protocol || protocol, email.host || host);
+        } catch(e) {
+          console.error(`Error sending scheduled email to ${email.email}:`, e);
+        }
+      }
+      await storage.updateSettings({ lastSchedulingAt: new Date().toISOString() });
+    } catch(err) {
+      console.error("Error processing scheduled emails:", err);
+    }
+  }
+
+  // Heartbeat interval (1 minute) to check dynamic timing
+  setInterval(async () => {
+    try {
+      const settings = await storage.getSettings();
+      const now = Date.now();
+
+      // 1. Scheduled Sending
+      if (settings.schedulingEnabled) {
+        const lastRun = settings.lastSchedulingAt ? new Date(settings.lastSchedulingAt).getTime() : 0;
+        const intervalMs = settings.schedulingIntervalMinutes * 60 * 1000;
+        if (now - lastRun >= intervalMs) {
+          await runScheduledSends("http", "localhost");
+        }
+      }
+
+      // 2. Follow-ups
+      if (settings.followUpsEnabled) {
+        const lastRun = settings.lastFollowUpAt ? new Date(settings.lastFollowUpAt).getTime() : 0;
+        const intervalMs = settings.followUpIntervalMinutes * 60 * 1000;
+        if (now - lastRun >= intervalMs) {
+          await processFollowUps();
+          await storage.updateSettings({ lastFollowUpAt: new Date().toISOString() });
+        }
+      }
+
+      // 3. IMAP Polling
+      if (settings.replyPollingEnabled) {
+        const lastRun = settings.lastReplyPollingAt ? new Date(settings.lastReplyPollingAt).getTime() : 0;
+        const intervalMs = settings.replyPollingIntervalMinutes * 60 * 1000;
+        if (now - lastRun >= intervalMs) {
+          await pollInbox();
+          await storage.updateSettings({ lastReplyPollingAt: new Date().toISOString() });
+        }
+      }
+    } catch (err) {
+      console.error("Heartbeat Error:", err);
+    }
+  }, 60000);
 
   return httpServer;
 }

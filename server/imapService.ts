@@ -74,18 +74,3 @@ export async function pollInbox() {
     }
   }
 }
-
-export function startReplyPolling() {
-  // Poll immediately on startup (after a slight delay to ensure DB is ready)
-  setTimeout(() => {
-    console.log("IMAP: Starting initial inbox poll...");
-    pollInbox();
-  }, 5000);
-
-  // Then poll every 5 minutes
-  const FIVE_MINUTES = 5 * 60 * 1000;
-  setInterval(() => {
-    console.log("IMAP: Running scheduled inbox poll...");
-    pollInbox();
-  }, FIVE_MINUTES);
-}

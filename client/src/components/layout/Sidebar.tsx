@@ -1,5 +1,5 @@
 import { Link, useLocation } from "wouter";
-import { Send, FileText, LayoutDashboard, Files, Moon, Sun, Mail, Clock, Settings, BarChart2, Home } from "lucide-react";
+import { Send, FileText, LayoutDashboard, Files, Moon, Sun, Mail, Clock, Settings, BarChart2, Home, Calendar } from "lucide-react";
 import { clsx, type ClassValue } from "clsx";
 import { twMerge } from "tailwind-merge";
 import { useTheme } from "@/components/theme-provider";
@@ -8,7 +8,7 @@ function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
 }
 
-const navItems = [
+export const navItems = [
   { href: "/", label: "Home", icon: Home },
   { href: "/new", label: "New Outreach", icon: Send },
   { href: "/applications", label: "Applications", icon: LayoutDashboard },
@@ -16,6 +16,7 @@ const navItems = [
   { href: "/templates", label: "Templates", icon: FileText },
   { href: "/documents", label: "Documents", icon: Files },
   { href: "/followup", label: "Follow-ups", icon: Clock },
+  { href: "/scheduled", label: "Scheduled", icon: Calendar },
 ];
 
 export function Sidebar() {
@@ -68,10 +69,10 @@ export function Sidebar() {
           {theme === "light" ? <Moon className="w-5 h-5" /> : <Sun className="w-5 h-5" />}
           {theme === "light" ? "Dark Mode" : "Light Mode"}
         </button>
-        <div className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-slate-400 hover:text-slate-200 hover:bg-slate-900 transition-colors cursor-pointer">
+        <Link href="/settings" className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-slate-400 hover:text-slate-200 hover:bg-slate-900 transition-colors cursor-pointer w-full text-left">
           <Settings className="w-5 h-5" />
           Settings
-        </div>
+        </Link>
       </div>
     </div>
   );

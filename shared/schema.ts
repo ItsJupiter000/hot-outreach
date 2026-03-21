@@ -63,6 +63,26 @@ export const SendEmailRequestSchema = z.object({
   resumeId: z.string().uuid().optional(),
   followUpTemplateId: z.string().uuid().optional(),
   followUpDays: z.number().int().min(1).max(30).optional(),
+  scheduledFor: z.string().optional(),
 });
 
 export type SendEmailRequest = z.infer<typeof SendEmailRequestSchema>;
+
+export const SettingsSchema = z.object({
+  id: z.string(),
+  followUpsEnabled: z.boolean(),
+  schedulingEnabled: z.boolean(),
+  replyPollingEnabled: z.boolean(),
+  followUpIntervalMinutes: z.number(),
+  schedulingIntervalMinutes: z.number(),
+  replyPollingIntervalMinutes: z.number(),
+  followUpTemplateId: z.string().nullable(),
+  followUpDays: z.number(),
+  lastFollowUpAt: z.string().nullable(),
+  lastSchedulingAt: z.string().nullable(),
+  lastReplyPollingAt: z.string().nullable(),
+  updatedAt: z.string(),
+});
+
+export type Settings = z.infer<typeof SettingsSchema>;
+export type UpdateSettings = Partial<Omit<Settings, "id" | "updatedAt">>;

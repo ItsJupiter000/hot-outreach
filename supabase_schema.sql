@@ -59,3 +59,29 @@ ON CONFLICT (id) DO NOTHING;
 DROP POLICY IF EXISTS "allow_all_storage" ON storage.objects;
 CREATE POLICY "allow_all_storage" ON storage.objects
   FOR ALL USING (bucket_id = 'documents') WITH CHECK (bucket_id = 'documents');
+
+-- Settings
+CREATE TABLE IF NOT EXISTS settings (
+  id TEXT PRIMARY KEY, -- 'global'
+  follow_ups_enabled BOOLEAN NOT NULL DEFAULT TRUE,
+  scheduling_enabled BOOLEAN NOT NULL DEFAULT TRUE,
+  reply_polling_enabled BOOLEAN NOT NULL DEFAULT TRUE,
+  follow_up_interval_minutes INTEGER NOT NULL DEFAULT 60,
+  scheduling_interval_minutes INTEGER NOT NULL DEFAULT 360,
+  reply_polling_interval_minutes INTEGER NOT NULL DEFAULT 5,
+  follow_up_template_id UUID REFERENCES templates(id),
+  follow_up_days INTEGER NOT NULL DEFAULT 4,
+  last_follow_up_at TIMESTAMPTZ,
+  last_scheduling_at TIMESTAMPTZ,
+  last_reply_polling_at TIMESTAMPTZ,
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+-- Insert default global settings
+INSERT INTO settings (id, follow_ups_enabled, scheduling_enabled, reply_polling_enabled, follow_up_interval_minutes, scheduling_interval_minutes, reply_polling_interval_minutes)
+VALUES ('global', true, true, true, 60, 360, 5)
+ON CONFLICT (id) DO NOTHING;
+
+ALTER TABLE settings ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "allow_all_settings" ON settings;
+CREATE POLICY "allow_all_settings" ON settings FOR ALL USING (true) WITH CHECK (true);

@@ -53,29 +53,20 @@ app.use((req, res, next) => {
   res.on("finish", () => {
     const duration = Date.now() - start;
     if (path.startsWith("/api")) {
-      let logLine = `${req.method} ${path} ${res.statusCode} in ${duration}ms`;
-      if (capturedJsonResponse) {
-        logLine += ` :: ${JSON.stringify(capturedJsonResponse)}`;
-      }
-
-      log(logLine);
+      log(`${req.method} ${path} ${res.statusCode} in ${duration}ms`);
     }
   });
 
   next();
 });
 
-import { startReplyPolling } from "./imapService";
-import { startFollowUpCron } from "./followUpService";
+// Services are now managed by the heartbeat in routes.ts
 
 (async () => {
   await registerRoutes(httpServer, app);
 
-  // Start polling inbox for replies
-  startReplyPolling();
-
-  // Start follow-up email cron job
-  startFollowUpCron();
+  // Services are managed by heartbeat in registerRoutes
+  // ...
 
   app.use((err: any, _req: Request, res: Response, next: NextFunction) => {
     const status = err.status || err.statusCode || 500;
