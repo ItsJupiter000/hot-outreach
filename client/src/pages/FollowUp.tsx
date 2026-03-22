@@ -31,6 +31,7 @@ import {
 import { format, addDays } from "date-fns";
 import { motion, AnimatePresence } from "framer-motion";
 import { useSettings } from "@/hooks/use-settings";
+import { Switch } from "@/components/ui/switch";
 
 export default function FollowUp() {
   const { data: templates = [], isLoading: isLoadingTemplates } = useTemplates();
@@ -96,21 +97,30 @@ export default function FollowUp() {
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
           <div>
             <div className="flex items-center gap-2 mb-2">
-              <div className="px-2 py-0.5 rounded-full bg-primary/10 text-primary text-[10px] font-bold uppercase tracking-wider">Automation</div>
+              <div className="px-2 py-0.5 rounded-full bg-primary/10 text-primary text-[10px] font-bold uppercase tracking-wider">Auto Follow-up</div>
               <Sparkles className="w-4 h-4 text-amber-400" />
             </div>
-            <h1 className="text-4xl font-display font-black text-foreground tracking-tight">Follow-up Sequences</h1>
+            <h1 className="text-4xl font-display font-black text-foreground tracking-tight">Follow-up Automation</h1>
             <p className="text-muted-foreground mt-2 max-w-xl text-lg">
               Smart automation to keep your application threads alive. Configure once, automate many.
             </p>
           </div>
           
           <div className="flex items-center gap-3">
-             <div className={`flex items-center gap-3 px-4 py-2 rounded-2xl border transition-all ${settings?.followUpsEnabled ? 'bg-emerald-50 border-emerald-200 dark:bg-emerald-900/20 dark:border-emerald-800' : 'bg-slate-50 border-slate-200 dark:bg-slate-900/20 dark:border-slate-800'}`}>
-                <div className={`w-2 h-2 rounded-full ${settings?.followUpsEnabled ? 'bg-emerald-500 animate-pulse' : 'bg-slate-400'}`} />
-                <span className={`text-sm font-bold ${settings?.followUpsEnabled ? 'text-emerald-700 dark:text-emerald-400' : 'text-slate-500'}`}>
-                  {settings?.followUpsEnabled ? 'System Active' : 'System Paused'}
-                </span>
+             <div className={`flex items-center gap-4 px-5 py-3 rounded-[1.5rem] border transition-all ${settings?.followUpsEnabled ? 'bg-emerald-50/50 border-emerald-200 dark:bg-emerald-900/20 dark:border-emerald-800 shadow-sm' : 'bg-slate-50 border-slate-200 dark:bg-slate-900/20 dark:border-slate-800'}`}>
+                <div className="flex flex-col">
+                  <span className={`text-[10px] font-black uppercase tracking-[0.2em] ${settings?.followUpsEnabled ? 'text-emerald-600 dark:text-emerald-400' : 'text-slate-400'}`}>
+                    System Status
+                  </span>
+                  <span className={`text-sm font-bold ${settings?.followUpsEnabled ? 'text-emerald-900 dark:text-emerald-200' : 'text-slate-500'}`}>
+                    {settings?.followUpsEnabled ? 'Active' : 'Paused'}
+                  </span>
+                </div>
+                <div className="w-px h-8 bg-border/50 mx-1" />
+                <Switch 
+                  checked={settings?.followUpsEnabled ?? true}
+                  onChange={(checked) => updateSettings({ followUpsEnabled: checked })}
+                />
              </div>
           </div>
         </div>
@@ -142,7 +152,7 @@ export default function FollowUp() {
             <div className="bg-slate-50/50 dark:bg-slate-900/50 px-8 py-6 border-b border-border flex items-center justify-between">
               <div className="flex items-center gap-3">
                 <Settings2 className="w-5 h-5 text-primary" />
-                <h2 className="font-bold text-lg">Auto-Apply Settings</h2>
+                <h2 className="font-bold text-lg">Automation Settings</h2>
               </div>
               {isUpdating && <Loader2 className="w-4 h-4 animate-spin text-primary" />}
             </div>
@@ -195,7 +205,7 @@ export default function FollowUp() {
                 className="w-full flex items-center justify-center gap-3 px-6 py-4 rounded-2xl bg-primary text-primary-foreground font-black text-lg shadow-lg shadow-primary/20 hover:shadow-xl hover:-translate-y-1 transition-all disabled:opacity-50 disabled:translate-y-0"
               >
                 {updateAll.isPending ? <Loader2 className="w-6 h-6 animate-spin" /> : <Zap className="w-6 h-6" />}
-                Sync Individual Records
+                Apply to All
               </button>
             </div>
           </div>
@@ -230,8 +240,8 @@ export default function FollowUp() {
                   className="bg-card border-2 border-dashed border-border rounded-[2.5rem] p-12 text-center"
                 >
                   <Mail className="w-12 h-12 text-muted mx-auto mb-4 opacity-20" />
-                  <p className="font-black text-foreground uppercase tracking-widest text-sm">Clear Horizons</p>
-                  <p className="text-xs text-muted-foreground mt-1 font-medium italic">No pending action items detected.</p>
+                   <p className="font-black text-foreground uppercase tracking-widest text-sm">All caught up</p>
+                   <p className="text-xs text-muted-foreground mt-1 font-medium italic">No pending action items detected.</p>
                 </motion.div>
               )}
 
@@ -301,14 +311,14 @@ export default function FollowUp() {
                         disabled={sendFollowUpMutation.isPending}
                         className="w-full md:w-auto bg-primary text-white h-12 md:h-14 px-8 rounded-2xl shadow-xl shadow-primary/20 hover:scale-[1.02] active:scale-95 transition-all flex items-center justify-center gap-3 font-black text-xs uppercase tracking-widest"
                       >
-                        {sendFollowUpMutation.isPending && sendFollowUpMutation.variables === app.id ? (
-                          <Loader2 className="w-5 h-5 animate-spin" />
-                        ) : (
-                          <>
-                            Deploy
-                            <Send className="w-4 h-4" />
-                          </>
-                        )}
+                         {sendFollowUpMutation.isPending && sendFollowUpMutation.variables === app.id ? (
+                           <Loader2 className="w-5 h-5 animate-spin" />
+                         ) : (
+                           <>
+                             Send now
+                             <Send className="w-4 h-4" />
+                           </>
+                         )}
                       </button>
                     </div>
                   </motion.div>

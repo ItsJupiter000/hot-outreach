@@ -58,7 +58,7 @@ export default function Scheduled() {
         {isLoading ? (
           <div className="py-20 flex flex-col items-center justify-center text-muted-foreground bg-card/30 rounded-[2rem] border-2 border-dashed border-border">
             <Loader2 className="w-10 h-10 animate-spin mb-4 text-primary" />
-            <p className="font-bold">Accessing the vault...</p>
+            <p className="font-bold">Loading queued emails...</p>
           </div>
         ) : scheduled.length === 0 ? (
           <motion.div 
@@ -117,7 +117,7 @@ export default function Scheduled() {
 
                     <div className="flex items-center gap-4 p-4 bg-slate-50 dark:bg-slate-900/50 rounded-2xl border border-slate-100 dark:border-slate-800 hidden md:flex">
                        <div className="w-full sm:w-auto">
-                          <p className="text-[9px] font-black uppercase text-slate-400 tracking-widest mb-1">Target Blueprint</p>
+                          <p className="text-[9px] font-black uppercase text-slate-400 tracking-widest mb-1">Template</p>
                           <p className="text-[11px] font-black text-slate-600 dark:text-slate-400 uppercase truncate max-w-[150px]">{email.templateName || "System Default"}</p>
                        </div>
                        <div className="h-8 w-px bg-slate-200 dark:bg-slate-800 mx-2" />
@@ -137,7 +137,7 @@ export default function Scheduled() {
                           <Loader2 className="w-4 h-4 animate-spin" />
                         ) : (
                           <>
-                            Force Launch <ArrowRight className="w-3 h-3" />
+                            Send now <ArrowRight className="w-3 h-3" />
                           </>
                         )}
                       </button>

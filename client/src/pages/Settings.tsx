@@ -3,8 +3,9 @@ import { Layout } from "@/components/layout/Layout";
 import { useTheme } from "@/components/theme-provider";
 import { BellRing, Clock, Save, Trash2, ShieldCheck, MailSearch, CalendarClock, MousePointer2, Loader2, Sun, Moon, Monitor, RefreshCcw, Sparkles, Sliders } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { useSettings } from "@/hooks/use-settings";
 import { motion, AnimatePresence } from "framer-motion";
+import { useSettings } from "@/hooks/use-settings";
+import { Switch } from "@/components/ui/switch";
 
 export default function Settings() {
   const { theme, setTheme } = useTheme();
@@ -24,8 +25,8 @@ export default function Settings() {
     localStorage.setItem("hot_outreach_notifications", enableNotifications.toString());
     
     toast({
-      title: "Tactical Preferences Updated",
-      description: "Local display parameters have been recalibrated.",
+      title: "Settings Updated",
+      description: "Your preferences have been saved.",
     });
   };
 
@@ -33,8 +34,8 @@ export default function Settings() {
     if (confirm("Are you sure you want to clear your local preferences cache? This will not delete your applications from the database.")) {
       localStorage.removeItem("hot_outreach_notifications");
       toast({
-        title: "Matrix Reset",
-        description: "Local application preferences have been purged.",
+        title: "Cache Cleared",
+        description: "Local settings have been reset.",
         variant: "destructive"
       });
     }
@@ -59,8 +60,8 @@ export default function Settings() {
     <Layout>
       <div className="mb-10">
         <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }}>
-          <h1 className="text-4xl font-display font-black text-foreground tracking-tight">System Configuration</h1>
-          <p className="text-muted-foreground mt-2 font-medium italic">Fine-tune your outreach engine for maximum efficiency.</p>
+          <h1 className="text-4xl font-display font-black text-foreground tracking-tight">Settings</h1>
+          <p className="text-muted-foreground mt-2 font-medium italic">Configure your application preferences and automation.</p>
         </motion.div>
       </div>
 
@@ -76,19 +77,19 @@ export default function Settings() {
             <div className="bg-primary/10 p-2 rounded-xl text-primary">
               <Sparkles className="w-5 h-5" />
             </div>
-            <h2 className="font-black text-sm uppercase tracking-widest text-foreground">Visual Interface</h2>
+            <h2 className="font-black text-sm uppercase tracking-widest text-foreground">Appearance</h2>
           </div>
           <div className="p-8">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-6">
               <div>
-                <p className="font-black text-slate-900 dark:text-white uppercase tracking-tight">Atmosphere</p>
-                <p className="text-xs font-medium text-slate-400 mt-1 uppercase tracking-widest">Select your preferred tactical overlay.</p>
+                <p className="font-black text-slate-900 dark:text-white uppercase tracking-tight">Theme</p>
+                <p className="text-xs font-medium text-slate-400 mt-1 uppercase tracking-widest">Select your preferred application theme.</p>
               </div>
               <div className="flex bg-slate-100 dark:bg-slate-900 p-1.5 rounded-2xl border border-slate-200 dark:border-slate-800">
                 {[
-                  { id: 'light', icon: Sun, label: 'Solar' },
-                  { id: 'dark', icon: Moon, label: 'Lunar' },
-                  { id: 'system', icon: Monitor, label: 'Auto' }
+                  { id: 'light', icon: Sun, label: 'Light' },
+                  { id: 'dark', icon: Moon, label: 'Dark' },
+                  { id: 'system', icon: Monitor, label: 'System' }
                 ].map((t) => (
                   <button
                     key={t.id}
@@ -110,7 +111,7 @@ export default function Settings() {
               <div className="bg-primary/10 p-2 rounded-xl text-primary">
                 <Sliders className="w-5 h-5" />
               </div>
-              <h2 className="font-black text-sm uppercase tracking-widest text-foreground">Core Subsystems</h2>
+              <h2 className="font-black text-sm uppercase tracking-widest text-foreground">Feature Management</h2>
             </div>
             {(isUpdating || isSyncing) && <Loader2 className="w-5 h-5 animate-spin text-primary" />}
           </div>
@@ -123,8 +124,8 @@ export default function Settings() {
                     <CalendarClock className="w-6 h-6 text-blue-600 dark:text-blue-400" />
                   </div>
                   <div>
-                    <p className="font-black text-slate-900 dark:text-white uppercase tracking-tight">Sequence Automation</p>
-                    <p className="text-[10px] font-medium text-slate-400 mt-1 uppercase tracking-widest leading-relaxed max-w-sm">Automatically deploy follow-up payloads based on timing parameters.</p>
+                    <p className="font-black text-slate-900 dark:text-white uppercase tracking-tight">Follow-up Automation</p>
+                    <p className="text-[10px] font-medium text-slate-400 mt-1 uppercase tracking-widest leading-relaxed max-w-sm">Automatically send follow-up emails based on your schedule.</p>
                   </div>
                 </div>
                 <div className="flex items-center gap-4 bg-slate-50 dark:bg-slate-900/50 p-3 rounded-2xl border border-slate-100 dark:border-slate-800">
@@ -136,16 +137,11 @@ export default function Settings() {
                     <RefreshCcw className={`w-3.5 h-3.5 ${isSyncing ? 'animate-spin' : ''}`} /> Force Sync
                   </button>
                   <div className="w-px h-6 bg-slate-200 dark:bg-slate-800" />
-                  <label className="relative inline-flex items-center cursor-pointer">
-                    <input 
-                      type="checkbox" 
-                      className="sr-only peer" 
-                      checked={settings?.followUpsEnabled ?? true}
-                      disabled={isLoadingSettings}
-                      onChange={(e) => updateSettings({ followUpsEnabled: e.target.checked })}
-                    />
-                    <div className="w-12 h-6 bg-slate-200 peer-focus:outline-none rounded-full peer dark:bg-slate-800 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-1 after:left-1 after:bg-white after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-primary shadow-inner"></div>
-                  </label>
+                  <Switch 
+                    checked={settings?.followUpsEnabled ?? true}
+                    disabled={isLoadingSettings}
+                    onChange={(checked) => updateSettings({ followUpsEnabled: checked })}
+                  />
                 </div>
               </div>
               <div className="sm:pl-16 flex flex-col sm:flex-row sm:items-center gap-6">
@@ -164,7 +160,7 @@ export default function Settings() {
                 {settings?.lastFollowUpAt && (
                   <span className="text-[9px] font-black text-slate-300 dark:text-slate-600 uppercase tracking-widest flex items-center gap-2">
                     <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-                    Last Engagement: {new Date(settings.lastFollowUpAt).toLocaleTimeString()}
+                    Last Run: {new Date(settings.lastFollowUpAt).toLocaleTimeString()}
                   </span>
                 )}
               </div>
@@ -180,8 +176,8 @@ export default function Settings() {
                     <Clock className="w-6 h-6 text-purple-600 dark:text-purple-400" />
                   </div>
                   <div>
-                    <p className="font-black text-slate-900 dark:text-white uppercase tracking-tight">Tactical Queue</p>
-                    <p className="text-[10px] font-medium text-slate-400 mt-1 uppercase tracking-widest leading-relaxed max-w-sm">Buffer outbound operations for precision timing.</p>
+                    <p className="font-black text-slate-900 dark:text-white uppercase tracking-tight">Scheduled Sending</p>
+                    <p className="text-[10px] font-medium text-slate-400 mt-1 uppercase tracking-widest leading-relaxed max-w-sm">Queue emails to be sent at a specific time.</p>
                   </div>
                 </div>
                 <div className="flex items-center gap-4 bg-slate-50 dark:bg-slate-900/50 p-3 rounded-2xl border border-slate-100 dark:border-slate-800">
@@ -193,16 +189,11 @@ export default function Settings() {
                     <RefreshCcw className={`w-3.5 h-3.5 ${isSyncing ? 'animate-spin' : ''}`} /> Force Sync
                   </button>
                   <div className="w-px h-6 bg-slate-200 dark:bg-slate-800" />
-                  <label className="relative inline-flex items-center cursor-pointer">
-                    <input 
-                      type="checkbox" 
-                      className="sr-only peer" 
-                      checked={settings?.schedulingEnabled ?? true}
-                      disabled={isLoadingSettings}
-                      onChange={(e) => updateSettings({ schedulingEnabled: e.target.checked })}
-                    />
-                    <div className="w-12 h-6 bg-slate-200 peer-focus:outline-none rounded-full peer dark:bg-slate-800 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-1 after:left-1 after:bg-white after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-primary shadow-inner"></div>
-                  </label>
+                  <Switch 
+                    checked={settings?.schedulingEnabled ?? true}
+                    disabled={isLoadingSettings}
+                    onChange={(checked) => updateSettings({ schedulingEnabled: checked })}
+                  />
                 </div>
               </div>
               <div className="sm:pl-16 flex flex-col sm:flex-row sm:items-center gap-6">
@@ -221,7 +212,7 @@ export default function Settings() {
                 {settings?.lastSchedulingAt && (
                   <span className="text-[9px] font-black text-slate-300 dark:text-slate-600 uppercase tracking-widest flex items-center gap-2">
                     <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-                    Last Flush: {new Date(settings.lastSchedulingAt).toLocaleTimeString()}
+                    Last Run: {new Date(settings.lastSchedulingAt).toLocaleTimeString()}
                   </span>
                 )}
               </div>
@@ -237,8 +228,8 @@ export default function Settings() {
                     <MailSearch className="w-6 h-6 text-emerald-600 dark:text-emerald-400" />
                   </div>
                   <div>
-                    <p className="font-black text-slate-900 dark:text-white uppercase tracking-tight">Inbox Recon</p>
-                    <p className="text-[10px] font-medium text-slate-400 mt-1 uppercase tracking-widest leading-relaxed max-w-sm">Real-time IMAP polling for incoming intelligence and signals.</p>
+                    <p className="font-black text-slate-900 dark:text-white uppercase tracking-tight">Inbox Monitoring</p>
+                    <p className="text-[10px] font-medium text-slate-400 mt-1 uppercase tracking-widest leading-relaxed max-w-sm">Check for new replies in your connected email account.</p>
                   </div>
                 </div>
                 <div className="flex items-center gap-4 bg-slate-50 dark:bg-slate-900/50 p-3 rounded-2xl border border-slate-100 dark:border-slate-800">
@@ -250,16 +241,11 @@ export default function Settings() {
                     <RefreshCcw className={`w-3.5 h-3.5 ${isSyncing ? 'animate-spin' : ''}`} /> Force Sync
                   </button>
                   <div className="w-px h-6 bg-slate-200 dark:bg-slate-800" />
-                  <label className="relative inline-flex items-center cursor-pointer">
-                    <input 
-                      type="checkbox" 
-                      className="sr-only peer" 
-                      checked={settings?.replyPollingEnabled ?? true}
-                      disabled={isLoadingSettings}
-                      onChange={(e) => updateSettings({ replyPollingEnabled: e.target.checked })}
-                    />
-                    <div className="w-12 h-6 bg-slate-200 peer-focus:outline-none rounded-full peer dark:bg-slate-800 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-1 after:left-1 after:bg-white after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-primary shadow-inner"></div>
-                  </label>
+                  <Switch 
+                    checked={settings?.replyPollingEnabled ?? true}
+                    disabled={isLoadingSettings}
+                    onChange={(checked) => updateSettings({ replyPollingEnabled: checked })}
+                  />
                 </div>
               </div>
               <div className="sm:pl-16 flex flex-col sm:flex-row sm:items-center gap-6">
@@ -278,7 +264,7 @@ export default function Settings() {
                 {settings?.lastReplyPollingAt && (
                   <span className="text-[9px] font-black text-slate-300 dark:text-slate-600 uppercase tracking-widest flex items-center gap-2">
                     <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-                    Last Extraction: {new Date(settings.lastReplyPollingAt).toLocaleTimeString()}
+                    Last Run: {new Date(settings.lastReplyPollingAt).toLocaleTimeString()}
                   </span>
                 )}
               </div>
@@ -292,23 +278,18 @@ export default function Settings() {
             <div className="bg-primary/10 p-2 rounded-xl text-primary">
               <BellRing className="w-5 h-5" />
             </div>
-            <h2 className="font-black text-sm uppercase tracking-widest text-foreground">Operational Feedback</h2>
+            <h2 className="font-black text-sm uppercase tracking-widest text-foreground">App Behavior</h2>
           </div>
           <div className="p-8 space-y-8">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-6">
               <div>
-                <p className="font-black text-slate-900 dark:text-white uppercase tracking-tight">Status Feedbacks</p>
-                <p className="text-[10px] font-medium text-slate-400 mt-1 uppercase tracking-widest leading-relaxed max-w-sm">Dispatch tactical overlays for real-time mission updates.</p>
+                <p className="font-black text-slate-900 dark:text-white uppercase tracking-tight">Notifications</p>
+                <p className="text-[10px] font-medium text-slate-400 mt-1 uppercase tracking-widest leading-relaxed max-w-sm">Show toast notifications for app activities.</p>
               </div>
-              <label className="relative inline-flex items-center cursor-pointer">
-                <input 
-                  type="checkbox" 
-                  className="sr-only peer" 
-                  checked={enableNotifications}
-                  onChange={() => setEnableNotifications(!enableNotifications)}
-                />
-                <div className="w-12 h-6 bg-slate-200 peer-focus:outline-none rounded-full peer dark:bg-slate-800 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-1 after:left-1 after:bg-white after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-primary shadow-inner"></div>
-              </label>
+              <Switch 
+                checked={enableNotifications}
+                onChange={setEnableNotifications}
+              />
             </div>
           </div>
           
@@ -317,7 +298,7 @@ export default function Settings() {
               onClick={handleSave}
               className="group flex items-center gap-3 px-8 py-3.5 bg-primary text-white font-black text-xs uppercase tracking-[0.2em] rounded-2xl hover:bg-primary/90 transition-all shadow-xl shadow-primary/25 hover:-translate-y-1 active:translate-y-0"
             >
-              <Save className="w-4 h-4" /> Save Tactics
+              <Save className="w-4 h-4" /> Save Settings
             </button>
           </div>
         </motion.div>
@@ -325,19 +306,19 @@ export default function Settings() {
         {/* Danger Zone */}
         <motion.div variants={item} className="bg-card rounded-[2.5rem] border border-red-100 dark:border-red-900/20 overflow-hidden shadow-sm">
           <div className="px-8 py-6 border-b border-red-100 dark:border-red-900/20 bg-red-50/50 dark:bg-red-900/10">
-            <h2 className="font-black text-sm uppercase tracking-widest text-red-600 dark:text-red-400">Restricted Protocols</h2>
+            <h2 className="font-black text-sm uppercase tracking-widest text-red-600 dark:text-red-400">Danger Zone</h2>
           </div>
           <div className="p-8">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-6">
               <div>
-                <p className="font-black text-red-600 dark:text-red-400 uppercase tracking-tight">Flush Interface Cache</p>
-                <p className="text-[10px] font-medium text-slate-400 mt-1 uppercase tracking-widest leading-relaxed max-w-sm">Reset the tactical matrix to factory parameters. Operational data remains intact.</p>
+                <p className="font-black text-red-600 dark:text-red-400 uppercase tracking-tight">Clear Local Cache</p>
+                <p className="text-[10px] font-medium text-slate-400 mt-1 uppercase tracking-widest leading-relaxed max-w-sm">Clear local preferences. Your database records will not be affected.</p>
               </div>
               <button 
                 onClick={handleClearCache}
                 className="flex items-center justify-center gap-3 px-6 py-3 border-2 border-red-100 dark:border-red-900/30 text-red-600 dark:text-red-400 font-black text-xs uppercase tracking-widest rounded-2xl hover:bg-red-50 dark:hover:bg-red-900/20 transition-all active:scale-95"
               >
-                <Trash2 className="w-4 h-4" /> Initiate Purge
+                <Trash2 className="w-4 h-4" /> Clear Cache
               </button>
             </div>
           </div>

@@ -121,7 +121,7 @@ export default function Home() {
   const navCards = [
     {
       title: "New Outreach",
-      stat: "Initiate",
+      stat: "New",
       icon: Send,
       href: "/new",
       color: "text-indigo-600 bg-indigo-50 dark:bg-indigo-900/20",
@@ -196,7 +196,7 @@ export default function Home() {
         className="mb-8"
       >
         <h1 className="text-3xl font-display font-black text-foreground tracking-tight">Main Dashboard</h1>
-        <p className="text-muted-foreground mt-1 font-medium italic">Welcome back! Here's your mission status.</p>
+        <p className="text-muted-foreground mt-1 font-medium italic">Welcome back! Here's your dashboard summary.</p>
       </motion.div>
 
       {/* Compact Quick Access Section */}
@@ -208,7 +208,7 @@ export default function Home() {
       >
         <div className="flex items-center justify-between mb-4">
           <h2 className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground flex items-center gap-2">
-            <LayoutDashboard className="w-4 h-4 text-primary" /> Tactical Grid
+            <LayoutDashboard className="w-4 h-4 text-primary" /> Quick Access
           </h2>
         </div>
         <div className="grid grid-cols-2 lg:grid-cols-6 gap-3">
@@ -238,7 +238,7 @@ export default function Home() {
          <div className="lg:col-span-2 space-y-6">
             <div className="flex items-center justify-between">
               <h2 className="text-xl font-black text-foreground flex items-center gap-2">
-                <Activity className="w-5 h-5 text-primary" /> Daily Operations
+                <Activity className="w-5 h-5 text-primary" /> Daily Activity
               </h2>
               <div className="flex items-center gap-1.5 px-3 py-1.5 bg-primary/10 border border-primary/20 rounded-2xl">
                 <div className="w-2 h-2 rounded-full bg-primary animate-pulse" />
@@ -277,15 +277,15 @@ export default function Home() {
                <div className="space-y-4 relative z-10">
                   <div className="flex items-center justify-between mb-4">
                     <h3 className="text-[10px] font-black text-slate-400 flex items-center gap-2 uppercase tracking-[0.2em]">
-                      Mission Chronology <ArrowRight className="w-3 h-3" />
+                      Activity History <ArrowRight className="w-3 h-3" />
                     </h3>
                   </div>
 
                   {stats.todayActivityList.length === 0 ? (
                     <div className="py-16 text-center bg-slate-50/50 dark:bg-slate-900/30 rounded-[2rem] border-2 border-dashed border-slate-200 dark:border-slate-800">
                        <Sparkles className="w-10 h-10 text-slate-300 mx-auto mb-4" />
-                       <p className="text-sm font-black text-slate-400 italic">Static detected. Initiate outreach to see activity.</p>
-                       <button onClick={() => setLocation("/new")} className="mt-6 px-6 py-3 bg-white dark:bg-slate-900 shadow-xl rounded-2xl text-[10px] font-black text-primary hover:scale-110 active:scale-95 transition-all uppercase tracking-widest border border-slate-100 dark:border-slate-800">New Mission →</button>
+                       <p className="text-sm font-black text-slate-400 italic">No activity yet. Start your first outreach.</p>
+                       <button onClick={() => setLocation("/new")} className="mt-6 px-6 py-3 bg-white dark:bg-slate-900 shadow-xl rounded-2xl text-[10px] font-black text-primary hover:scale-110 active:scale-95 transition-all uppercase tracking-widest border border-slate-100 dark:border-slate-800">New Outreach →</button>
                     </div>
                   ) : (
                     <div className="space-y-3 max-h-[450px] overflow-y-auto pr-2 custom-scrollbar lg:pr-4">
@@ -322,7 +322,7 @@ export default function Home() {
                                rel="noopener noreferrer"
                                className="text-[10px] font-black text-primary hover:underline mt-1.5 inline-flex items-center gap-1 uppercase tracking-tighter"
                              >
-                               Vault <ExternalLink className="w-2.5 h-2.5" />
+                               Gmail <ExternalLink className="w-2.5 h-2.5" />
                              </a>
                           </div>
                         </motion.div>
@@ -348,7 +348,7 @@ export default function Home() {
                >
                   <div className="absolute -bottom-10 -left-10 w-40 h-40 bg-emerald-500/5 rounded-full blur-3xl" />
                   <div className="flex items-center justify-between mb-8">
-                    <p className="text-[10px] font-black uppercase text-slate-400 tracking-[0.2em]">Efficiency Index</p>
+                    <p className="text-[10px] font-black uppercase text-slate-400 tracking-[0.2em]">Performance Stats</p>
                     <div className="bg-emerald-50 dark:bg-emerald-900/20 p-2 rounded-xl">
                       <BarChart2 className="w-5 h-5 text-emerald-500" />
                     </div>
@@ -357,7 +357,7 @@ export default function Home() {
                   <div className="space-y-8">
                     <div className="space-y-3">
                       <div className="flex justify-between text-[11px] font-black uppercase tracking-widest">
-                        <span className="text-slate-400">Open Volatility</span>
+                        <span className="text-slate-400">Open Rate</span>
                         <span className="text-cyan-500">{stats.openRate}%</span>
                       </div>
                       <div className="h-2.5 bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
@@ -372,7 +372,7 @@ export default function Home() {
 
                     <div className="space-y-3">
                       <div className="flex justify-between text-[11px] font-black uppercase tracking-widest">
-                        <span className="text-slate-400">Reply Resonance</span>
+                        <span className="text-slate-400">Reply Rate</span>
                         <span className="text-purple-500">{stats.replyRate}%</span>
                       </div>
                       <div className="h-2.5 bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
@@ -403,7 +403,7 @@ export default function Home() {
                   onClick={() => setLocation("/new")}
                   className="w-full py-4.5 bg-white text-primary rounded-[1.25rem] font-black text-xs hover:scale-105 active:scale-95 transition-all shadow-2xl shadow-black/20 uppercase tracking-[0.2em]"
                  >
-                   Launch Deployment
+                   New Outreach
                  </button>
                </motion.div>
             </div>

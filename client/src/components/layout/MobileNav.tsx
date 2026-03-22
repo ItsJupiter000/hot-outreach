@@ -6,8 +6,8 @@ const mobileNavItems = [
   { href: "/", label: "Home", icon: Home },
   { href: "/new", label: "New", icon: Send },
   { href: "/applications", label: "Apps", icon: LayoutDashboard },
-  { href: "/followup", label: "Due", icon: Clock },
-  { href: "/scheduled", label: "Queue", icon: Calendar },
+  { href: "/followup", label: "Follow-up", icon: Clock },
+  { href: "/scheduled", label: "Scheduled", icon: Calendar },
 ];
 
 export function MobileNav() {

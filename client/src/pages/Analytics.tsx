@@ -157,8 +157,8 @@ export default function Analytics() {
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-start justify-between mb-10 gap-6">
         <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }}>
-          <h1 className="text-4xl font-display font-black text-foreground tracking-tight">Intelligence Dashboard</h1>
-          <p className="text-muted-foreground mt-2 font-medium italic">Strategic overview of your operation's trajectory.</p>
+          <h1 className="text-4xl font-display font-black text-foreground tracking-tight">Analytics</h1>
+          <p className="text-muted-foreground mt-2 font-medium italic">Track your application performance and conversion rates.</p>
         </motion.div>
         {/* Range toggle */}
         <motion.div 
@@ -183,10 +183,10 @@ export default function Analytics() {
 
       {/* ─── Metric Cards ──────────────────────────────────────────────────────── */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-6 mb-10">
-        <Metric icon={Send} label="Total Drops" value={total} color="bg-indigo-50 dark:bg-indigo-900/20 text-indigo-600 dark:text-indigo-400" delay={0.05} />
-        <Metric icon={MousePointer2} label="Direct Interest" value={pct(opened, total)} color="bg-cyan-50 dark:bg-cyan-900/20 text-cyan-600 dark:text-cyan-400" delay={0.1} />
-        <Metric icon={MessageSquare} label="Engagement Rate" value={pct(replied, total)} color="bg-purple-50 dark:bg-purple-900/20 text-purple-600 dark:text-purple-400" delay={0.15} />
-        <Metric icon={Trophy} label="Mission Success" value={pct(offer, total)} color="bg-emerald-50 dark:bg-emerald-900/20 text-emerald-600 dark:text-emerald-400" delay={0.2} />
+        <Metric icon={Send} label="Total Sent" value={total} color="bg-indigo-50 dark:bg-indigo-900/20 text-indigo-600 dark:text-indigo-400" delay={0.05} />
+        <Metric icon={MousePointer2} label="Open Rate" value={pct(opened, total)} color="bg-cyan-50 dark:bg-cyan-900/20 text-cyan-600 dark:text-cyan-400" delay={0.1} />
+        <Metric icon={MessageSquare} label="Reply Rate" value={pct(replied, total)} color="bg-purple-50 dark:bg-purple-900/20 text-purple-600 dark:text-purple-400" delay={0.15} />
+        <Metric icon={Trophy} label="Offers" value={pct(offer, total)} color="bg-emerald-50 dark:bg-emerald-900/20 text-emerald-600 dark:text-emerald-400" delay={0.2} />
       </div>
 
       {/* ─── Funnel ────────────────────────────────────────────────────────────── */}
@@ -198,7 +198,7 @@ export default function Analytics() {
       >
         <div className="absolute top-0 right-0 w-64 h-64 bg-primary/5 rounded-full -mr-32 -mt-32 blur-3xl" />
         <h2 className="font-black text-lg text-foreground mb-10 flex items-center gap-3 uppercase tracking-tight relative z-10">
-          <TrendingUp className="w-5 h-5 text-primary" /> Conversion Efficiency
+          <TrendingUp className="w-5 h-5 text-primary" /> Application Funnel
         </h2>
         
         <div className="grid grid-cols-2 md:grid-cols-5 gap-8 items-end relative z-10">
@@ -218,7 +218,7 @@ export default function Analytics() {
                     }}
                   />
                   <div className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-6 opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap">
-                     <span className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">{step.value} Records</span>
+                     <span className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">{step.value} Applications</span>
                   </div>
                 </div>
                 <div className="mt-6 text-center">
@@ -241,7 +241,7 @@ export default function Analytics() {
           transition={{ delay: 0.3 }}
           className="lg:col-span-2 bg-card border border-border/60 rounded-[2.5rem] p-8 shadow-sm"
         >
-          <h2 className="font-black text-lg text-foreground mb-8 uppercase tracking-tight">Temporal Activity Matrix</h2>
+           <h2 className="font-black text-lg text-foreground mb-8 uppercase tracking-tight">Activity Over Time</h2>
           <div className="h-[300px] w-full mt-4">
             <ResponsiveContainer width="100%" height="100%">
               <AreaChart data={dailyData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
@@ -280,8 +280,8 @@ export default function Analytics() {
               </AreaChart>
             </ResponsiveContainer>
           </div>
-          <div className="flex flex-wrap gap-4 mt-8 pt-6 border-t border-slate-50 dark:border-slate-800">
-            {[["Outbound","#6366f1"],["Awareness","#06b6d4"],["Interest","#a855f7"],["Sequence","#f97316"]].map(([label, color]) => (
+           <div className="flex flex-wrap gap-4 mt-8 pt-6 border-t border-slate-50 dark:border-slate-800">
+            {[["Sent","#6366f1"],["Opened","#06b6d4"],["Replied","#a855f7"],["Follow-up","#f97316"]].map(([label, color]) => (
               <span key={label} className="flex items-center gap-2 text-[9px] font-black text-slate-400 uppercase tracking-widest">
                 <span className="w-2.5 h-2.5 rounded-full" style={{ background: color as string }} />
                 {label}
@@ -291,15 +291,15 @@ export default function Analytics() {
         </motion.div>
 
         {/* Status Pie */}
-        <motion.div 
+         <motion.div 
           initial={{ opacity: 0, x: 20 }}
           animate={{ opacity: 1, x: 0 }}
           transition={{ delay: 0.35 }}
           className="bg-card border border-border/60 rounded-[2.5rem] p-8 shadow-sm flex flex-col"
         >
-          <h2 className="font-black text-lg text-foreground mb-8 uppercase tracking-tight">Status Vector</h2>
-          {statusCounts.length === 0 ? (
-            <div className="flex-1 flex items-center justify-center text-slate-400 text-[10px] font-black uppercase tracking-widest italic">Insufficient data points</div>
+          <h2 className="font-black text-lg text-foreground mb-8 uppercase tracking-tight">Status Distribution</h2>
+           {statusCounts.length === 0 ? (
+            <div className="flex-1 flex items-center justify-center text-slate-400 text-[10px] font-black uppercase tracking-widest italic">Insufficient applications</div>
           ) : (
             <div className="flex-1 flex flex-col justify-between">
               <div className="h-[180px] w-full">
@@ -346,9 +346,9 @@ export default function Analytics() {
         transition={{ delay: 0.4 }}
         className="bg-card border border-border/60 rounded-[2.5rem] overflow-hidden shadow-sm mb-24"
       >
-        <div className="px-8 py-6 border-b border-border/60 bg-slate-50/50 dark:bg-slate-900/50 flex items-center justify-between">
-          <h2 className="font-black text-sm text-foreground uppercase tracking-widest">Recent Trajectory</h2>
-          <span className="text-[10px] font-black text-slate-400 uppercase tracking-tight">Last 20 Ops</span>
+         <div className="px-8 py-6 border-b border-border/60 bg-slate-50/50 dark:bg-slate-900/50 flex items-center justify-between">
+          <h2 className="font-black text-sm text-foreground uppercase tracking-widest">Recent Activity</h2>
+          <span className="text-[10px] font-black text-slate-400 uppercase tracking-tight">Last 20 Applications</span>
         </div>
         <div className="divide-y divide-slate-50 dark:divide-slate-800">
           <AnimatePresence mode="popLayout">
